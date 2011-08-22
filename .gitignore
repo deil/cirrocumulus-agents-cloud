@@ -1,1 +1,2 @@
 lib/config/jabber_config.rb
+*.sqlite
