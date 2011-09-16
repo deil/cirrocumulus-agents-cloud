@@ -2,13 +2,14 @@ AGENT_ROOT = File.dirname(__FILE__)
 
 require 'config/jabber_config.rb'
 require 'rubygems'
+require 'bundler/setup'
 require 'yaml'
 require 'cirrocumulus'
 require 'cirrocumulus/logger'
 require 'cirrocumulus/engine'
-require 'cirrocumulus/master_agent'
 require 'cirrocumulus/kb'
 require 'cirrocumulus/ontology'
+require 'cirrocumulus/master_agent'
 
 class String
   def underscore
