@@ -225,13 +225,13 @@ class StorageOntology < Ontology::Base
       msg.ontology = self.name
       msg.receiver = message.sender
       msg.in_reply_to = message.reply_with
-      @cm.send(msg)
+      self.agent.send_message(msg)
     else
       msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
       msg.ontology = self.name
       msg.receiver = message.sender
       msg.in_reply_to = message.reply_with
-      @cm.send(msg)
+      self.agent.send_message(msg)
     end
   end
 

@@ -1,4 +1,3 @@
-require 'rubygems'
 require 'systemu'
 require 'activesupport'
 require 'log4r'

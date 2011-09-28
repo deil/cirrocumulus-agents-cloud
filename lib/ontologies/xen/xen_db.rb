@@ -1,4 +1,3 @@
-require 'rubygems'
 require 'activesupport'
 require 'activerecord'
 
