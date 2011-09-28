@@ -110,7 +110,7 @@ end
 
 ActiveRecord::Base.establish_connection(
   :adapter => 'sqlite3',
-  :database => "#{AGENT_ROOT}/xen.sqlite"
+  :database => "#{AGENT_ROOT}/databases/xen.sqlite"
 )
 
 class AgentState
