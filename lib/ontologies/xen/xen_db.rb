@@ -14,8 +14,8 @@ class VirtualDisk
 
   def self.all
     disks = []
-    KnownFact.all(:conditions => ['key like "vd%%"']).each do |f|
-      if f.key =~ /vd(\d+)$/
+    KnownFact.all(:conditions => ['key like "md%%"']).each do |f|
+      if f.key =~ /md(\d+)$/
         disk_number = $1.to_i
         disks << self.find_by_disk_number(disk_number)
       end
@@ -25,15 +25,15 @@ class VirtualDisk
   end
 
   def self.find_by_disk_number(disk_number)
-    fact = KnownFact.current.find_by_key('vd' + disk_number.to_s)
+    fact = KnownFact.current.find_by_key('md' + disk_number.to_s)
     return nil unless fact
     json = ActiveSupport::JSON.decode(fact.value)
     VirtualDisk.new(disk_number)
   end
   
   def save(origin = nil, agent = nil)
-    fact = KnownFact.current.find_by_key('vd' + @disk_number.to_s)
-    fact = KnownFact.new(:key => 'vd' + @disk_number.to_s, :is_active => 1) unless fact
+    fact = KnownFact.current.find_by_key('md' + @disk_number.to_s)
+    fact = KnownFact.new(:key => 'md' + @disk_number.to_s, :is_active => 1) unless fact
     fact.value = self.to_json
     fact.origin = origin
     fact.agent = agent
@@ -41,7 +41,7 @@ class VirtualDisk
   end
 
   def delete()
-    fact = KnownFact.current.find_by_key('vd' + @disk_number.to_s)
+    fact = KnownFact.current.find_by_key('md' + @disk_number.to_s)
     fact.update_attributes(:is_active => false) if fact
   end
 
