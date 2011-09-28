@@ -1,3 +1,4 @@
 lib/config/jabber_config.rb
 *.sqlite
 Gemfile.lock
+.idea
