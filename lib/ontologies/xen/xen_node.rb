@@ -53,7 +53,7 @@ class XenNode
 
   def self.set_cpu(domU, weight, cap)
     cmd = "xm sched-credit -d #{domU} -w #{weight} -c #{cap}"
-    Log4r::Logger.debug(cmd)
+    Log4r::Logger['os'].debug(cmd)
     _, res = systemu(cmd)
   end
 
