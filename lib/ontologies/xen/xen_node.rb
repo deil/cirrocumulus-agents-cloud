@@ -1,5 +1,5 @@
-require 'rubygems'
 require 'systemu'
+require 'log4r'
 require 'erb'
 
 class XenNode
@@ -53,7 +53,7 @@ class XenNode
 
   def self.set_cpu(domU, weight, cap)
     cmd = "xm sched-credit -d #{domU} -w #{weight} -c #{cap}"
-    puts cmd
+    Log4r::Logger.debug(cmd)
     _, res = systemu(cmd)
   end
 
