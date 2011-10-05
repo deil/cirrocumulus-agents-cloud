@@ -1,0 +1,2 @@
+= Cirrocumulus
+Cirrocumulus (http://github.com/deil/cirrocumulus) is an agent-based infrastructure management system.
