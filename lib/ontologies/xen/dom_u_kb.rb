@@ -3,7 +3,7 @@ require 'cirrocumulus/kb'
 class DomUKb < Kb
   def collect_knowledge()
     @knowledge = []
-    domUs = XenNode::list_running_domUs()
+    domUs = XenNode::list_running_guests()
     domUs.each do |domU|
       add_fact([:running, [:domu, domU]], 'yes')
     end
