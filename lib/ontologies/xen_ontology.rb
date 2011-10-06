@@ -34,8 +34,33 @@ class XenOntology < Ontology::Base
   end
 
   def handle_message(message, kb)
+    case message.act
+      when 'query-ref' then
+        msg = query(message.content)
+        msg.receiver = message.sender
+        msg.ontology = self.name
+        msg.in_reply_to = message.reply_with
+        self.agent.send_message(msg)
+
+      when 'request' then
+        handle_request(message)
+    end
   end
 
   private
+
+  def query(obj)
+    msg = Cirrocumulus::Message.new(nil, 'inform', nil)
+
+    if obj.first == :free_memory
+      msg.content = [:'=', obj, [XenNode.free_memory]]
+    elsif obj.first == :used_memory
+      msg.content = [:'=', obj, [XenNode.total_memory - XenNode.free_memory]]
+    elsif obj.first == :guests_count
+      msg.content = [:'=', obj, [XenNode.list_running_guests().size]]
+    end
+
+    msg
+  end
 
 end

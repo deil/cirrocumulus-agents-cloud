@@ -1,7 +1,7 @@
 require 'systemu'
 
 class XenNode
-  def self.list_running_domUs()
+  def self.list_running_guests()
     domus = []
 
     _, res = systemu 'virsh list'
