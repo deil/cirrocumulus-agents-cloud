@@ -1,7 +1,8 @@
-require 'systemu'
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_db.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_node.rb')
-require File.join(AGENT_ROOT, 'ontologies/xen/mdraid.rb')
+require File.join(AGENT_ROOT, 'standalone/mdraid.rb')
+require File.join(AGENT_ROOT, 'standalone/dom_u.rb')
+require File.join(AGENT_ROOT, 'standalone/mac.rb')
 
 class XenOntology < Ontology::Base
   def initialize(agent)
@@ -18,6 +19,14 @@ class XenOntology < Ontology::Base
       logger.info "autodiscovered virtual disk %d" % [discovered]
       disk = VirtualDisk.new(discovered)
       disk.save('discovered')
+    end
+
+    known_disks = VirtualDisk.all
+    known_disks.each do |disk|
+      if Mdraid.check_status(disk.disk_number) == :stopped
+        logger.info "bringing up disk %d" % [disk.disk_number]
+        changes_made += 1 if Mdraid.assemble(disk.disk_number)
+      end
     end
 
   end
