@@ -30,7 +30,7 @@ class XenNode
   end
   
   def self.total_memory
-    _, res = system('virsh nodeinfo')
+    _, res = systemu('virsh nodeinfo')
     res =~ /Memory size: +(\d+) kB/
     $1.to_i / 1024
   end
