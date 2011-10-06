@@ -23,12 +23,13 @@ class XenOntology < Ontology::Base
 
     known_disks = VirtualDisk.all
     known_disks.each do |disk|
-      if Mdraid.check_status(disk.disk_number) == :stopped
+      if Mdraid.get_status(disk.disk_number) == :stopped
         logger.info "bringing up disk %d" % [disk.disk_number]
         changes_made += 1 if Mdraid.assemble(disk.disk_number)
       end
     end
 
+    logger.info "restored state, made %d changes" % [changes_made]
   end
 
   def handle_message(message, kb)
