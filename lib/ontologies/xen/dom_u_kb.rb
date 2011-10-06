@@ -9,6 +9,6 @@ class DomUKb < Kb
     end
 
     add_fact([:free_memory], XenNode::free_memory)
-    add_fact([:domus_running], XenNode::list_running_domUs().size)
+    add_fact([:domus_running], XenNode::list_running_guests().size)
   end
 end
