@@ -1,3 +1,4 @@
+require File.join(AGENT_ROOT, 'ontologies/xen/dom_u_kb.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_db.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_node.rb')
 require File.join(AGENT_ROOT, 'standalone/mdraid.rb')

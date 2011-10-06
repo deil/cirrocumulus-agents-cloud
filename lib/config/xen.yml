@@ -1,2 +1,5 @@
 ontologies:
     - XenOntology
+
+kb: DomUKb
+

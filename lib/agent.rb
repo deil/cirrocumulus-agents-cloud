@@ -42,11 +42,20 @@ ontologies.each do |ontology_name|
   require File.join(AGENT_ROOT, 'ontologies', ontology_name.underscore)
 end
 
+kb_name = agent_config['kb']
+kb = if kb_name
+  puts "Will load knowledge base %s" % kb_name
+  require File.join(AGENT_ROOT, 'ontologies/xen/', kb_name.underscore) # TODO
+  eval("#{kb_name}.new()")
+else
+  Kb.new
+end
+
 cm = Cirrocumulus.new('master')
 a = Agent::Base.new(cm)
 a.load_ontologies(agent_config['ontologies'])
 begin
-  cm.run(a, Kb.new)
+  cm.run(a, kb)
 rescue Exception => e
   puts 'Got an error:'
   puts e
