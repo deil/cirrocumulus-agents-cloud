@@ -103,10 +103,17 @@ class XenOntology < Ontology::Base
     end
   end
 
-  # (stop (guest ..))
+  # (stop (guest (id ..)))
   def handle_stop_request(obj, message)
     if obj.first == :guest
-      guest_id = obj.second
+      guest_id = nil
+      params = obj.second
+      params.each do |param|
+        if param.is_a?(Array) && param.first == :id
+          guest_id = param.second
+        end
+      end
+
       if XenNode.is_guest_running?(guest_id)
         if XenNode.stop_guest(guest_id)
           msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
@@ -131,10 +138,17 @@ class XenOntology < Ontology::Base
     end
   end
 
-  # (reboot (guest ..))
+  # (reboot (guest (id ..)))
   def handle_reboot_request(obj, message)
     if obj.first == :guest
-      guest_id = obj.second
+      guest_id = nil
+      params = obj.second
+      params.each do |param|
+        if param.is_a?(Array) && param.first == :id
+          guest_id = param.second
+        end
+      end
+
       if XenNode.is_guest_running?(guest_id)
         if XenNode.reboot_guest(guest_id)
           msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
@@ -156,6 +170,35 @@ class XenOntology < Ontology::Base
         msg.in_reply_to = message.reply_with
         self.agent.send_message(msg)
       end
+    end
+  end
+
+  # (start (guest (id ..) (ram ..)))
+  def handle_start_request(obj, message)
+    if obj.first == :guest
+      guest_cfg = {:is_hvm => 0, :vcpus => 1, :cpu_cap => 0, :cpu_weight => 128}
+      guest_id = nil
+
+      params = obj.second
+      params.each do |param|
+        next if !param.is_a?(Array)
+        case param.first
+          when :id
+            guest_id = param.second
+          when :hvm
+            guest_cfg[:is_hvm] = param.second.to_i
+          when :ram
+            guest_cfg[:ram] = param.second.to_i
+          when :vcpus
+            guest_cfg[:vcpus] = param.second.to_i
+          when :weight
+            guest_cfg[:cpu_weight] = param.second.to_i
+          when :cap
+            guest_cfg[:cpu_cap] = param.second.to_i
+        end
+      end
+
+      p guest_cfg
     end
   end
 
