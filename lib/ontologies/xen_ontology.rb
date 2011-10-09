@@ -100,6 +100,8 @@ class XenOntology < Ontology::Base
       handle_stop_request(message.content.second, message)
     elsif action == :reboot
       handle_reboot_request(message.content.second, message)
+    elsif action == :start
+      handle_start_request(message.content.second, message)
     end
   end
 
