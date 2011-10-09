@@ -80,18 +80,12 @@ class XenNode
     err.blank?
   end
 
-  def self.restart(domU)
-    _, res = systemu "virsh reboot #{domU}"
+  def self.reboot_guest(guest_id)
+    perform_cmd("virsh reboot #{guest_id}")
   end
 
-  def self.stop(domU)
-    cmd = "virsh destroy #{domU}"
-    puts cmd
-    _, out, err = systemu(cmd)
-    puts out
-    puts err
-    
-    err.blank?
+  def self.stop_guest(guest_id)
+    perform_cmd("virsh destroy #{guest_id}")
   end
   
   def self.attach_disk(domU, disk_number, block_device)
@@ -105,6 +99,17 @@ class XenNode
     cmd = "virsh detach-disk #{domU} #{block_device}"
     puts cmd
     _, res, err = systemu(cmd)
+    err.blank?
+  end
+
+  private
+
+  def perform_cmd(cmd)
+    Log4r::Logger['os'].debug(cmd)
+    _, out, err = systemu(cmd)
+    Log4r::Logger['os'].debug(out)
+    Log4r::Logger['os'].debug(err)
+
     err.blank?
   end
 end
