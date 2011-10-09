@@ -15,7 +15,11 @@ class XenNode
 
     domus
   end
-  
+
+  def self.is_guest_running?(guest_id)
+    return list_running_guests.include? guest_id
+  end
+
   def self.total_vcpus
     _, res = system('virsh nodeinfo')
     res =~ /CPU\(s\): +(\d)/

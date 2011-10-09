@@ -42,6 +42,13 @@ class XenOntology < Ontology::Base
         msg.in_reply_to = message.reply_with
         self.agent.send_message(msg)
 
+      when 'query-if'
+        msg = query_if(message.content)
+        msg.receiver = message.sender
+        msg.ontology = self.name
+        msg.in_reply_to = message.reply_with
+        self.agent.send_message(msg)
+
       when 'request' then
         handle_request(message)
     end
@@ -61,6 +68,29 @@ class XenOntology < Ontology::Base
     end
 
     msg
+  end
+
+  def query_if(obj)
+    msg = Cirrocumulus::Message.new(nil, 'inform', nil)
+
+    if obj.first == :running
+      msg.content = handle_running_query(obj) ? obj : [:not, obj]
+    end
+
+    msg
+  end
+
+  # (running (guest ..))
+  def handle_running_query(obj)
+    obj.each do |param|
+      next if !param.is_a?(Array)
+      if param.first.is_a?(Symbol) && param.first == :guest
+        guest_id = param.second
+        return XenNode::is_guest_running?(guest_id)
+      end
+    end
+
+    false
   end
 
 end
