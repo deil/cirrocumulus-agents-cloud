@@ -19,7 +19,7 @@
       <source dev='/dev/md<%= disk.second %>'/>
       <target dev='<%= disk.first %>' bus='xen'/>
     </disk>
-    <% end -%>
+    <% end %>
     <interface type='bridge'>
       <source bridge='em0' />
       <% if @eth1_mac %>
