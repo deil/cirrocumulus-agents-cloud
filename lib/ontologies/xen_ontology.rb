@@ -216,6 +216,15 @@ class XenOntology < Ontology::Base
 
       if !XenNode.is_guest_running?(guest_id)
         if XenNode.free_memory >= guest_cfg[:ram]
+          config = DomUConfig.find_by_name(guest_id)
+          if config
+            logger.warn("locally stored config for guest #{guest_id} already exists! deleted")
+            config.delete()
+          end
+
+          guest = DomU.new(guest_id, guest_cfg[:ram], guest_cfg[:vcpus], guest_cfg[:disks], guest_cfg[:cpu_weight], guest_cfg[:cpu_cap])
+          p guest.to_xml
+
           config = DomUConfig.new(guest_id)
           config.is_hvm = guest_cfg[:is_hvm]
           config.ram = guest_cfg[:ram]

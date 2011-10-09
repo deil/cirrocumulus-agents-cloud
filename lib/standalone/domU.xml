@@ -13,23 +13,29 @@
   <on_crash>restart</on_crash>
   <devices>
     <emulator>/usr/lib/xen/bin/qemu-dm</emulator>
-    <% @disks.each do |disk| %>
+    <% @disks.each do |disk| -%>
     <disk type='block' device='disk'>
       <driver name='phy'/>
-      <source dev='/dev/md<%= disk[:number] %>'/>
-      <target dev='<%= disk[:name] %>' bus='xen'/>
+      <source dev='/dev/md<%= disk.second %>'/>
+      <target dev='<%= disk.first %>' bus='xen'/>
     </disk>
-    <% end %>
+    <% end -%>
     <interface type='bridge'>
       <source bridge='em0' />
+      <% if @eth1_mac -%>
       <mac address='<%= @eth0_mac %>'/>
+      <% end -%>
       <script path='/etc/xen/scripts/vif-bridge'/>
     </interface>
     <interface type='bridge'>
       <source bridge='em0' />
+      <% if @eth1_mac -%>
       <mac address='<%= @eth1_mac %>'/>
+      <% end -%>
       <script path='/etc/xen/scripts/vif-bridge'/>
     </interface>
+    <% if @vnc_port -%>
     <graphics type='vnc' port='<%= @vnc_port %>' autoport='no'/>
+    <% end -%>
   </devices>
 </domain>

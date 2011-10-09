@@ -1,7 +1,6 @@
 require 'erb'
 
 class DomU
-  attr_accessor :id
   attr_accessor :name
   attr_accessor :mem
   attr_accessor :vcpus
@@ -12,17 +11,16 @@ class DomU
   attr_accessor :eth1_mac
   attr_accessor :vnc_port
 
-  def initialize(id, name, mem, vcpus, disks, cpu_weight, cpu_cap)
-    @id = id
+  def initialize(name, mem, vcpus, disks, cpu_weight, cpu_cap)
     @name = name
     @mem = mem
     @vcpus = vcpus
     @disks = disks
     @cpu_weight = cpu_weight
     @cpa_cap = cpu_cap
-    @eth0_mac = "00:16:3e:1b:00:#{@id.to_s(16)}"
-    @eth1_mac = "00:16:3e:1b:a0:#{@id.to_s(16)}"
-    @vnc_port = 5900 + @id
+    #@eth0_mac = "00:16:3e:1b:00:#{@id.to_s(16)}"
+    #@eth1_mac = "00:16:3e:1b:a0:#{@id.to_s(16)}"
+    #@vnc_port = 5900 + @id
   end
 
   def to_xml
