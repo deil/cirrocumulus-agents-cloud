@@ -107,8 +107,7 @@ class XenOntology < Ontology::Base
   def handle_stop_request(obj, message)
     if obj.first == :guest
       guest_id = nil
-      params = obj.second
-      params.each do |param|
+      obj.each do |param|
         if param.is_a?(Array) && param.first == :id
           guest_id = param.second
         end
@@ -142,8 +141,7 @@ class XenOntology < Ontology::Base
   def handle_reboot_request(obj, message)
     if obj.first == :guest
       guest_id = nil
-      params = obj.second
-      params.each do |param|
+      obj.each do |param|
         if param.is_a?(Array) && param.first == :id
           guest_id = param.second
         end
@@ -179,8 +177,7 @@ class XenOntology < Ontology::Base
       guest_cfg = {:is_hvm => 0, :vcpus => 1, :cpu_cap => 0, :cpu_weight => 128}
       guest_id = nil
 
-      params = obj.second
-      params.each do |param|
+      obj.each do |param|
         next if !param.is_a?(Array)
         case param.first
           when :id
