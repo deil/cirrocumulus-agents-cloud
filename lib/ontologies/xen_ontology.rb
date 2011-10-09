@@ -210,6 +210,23 @@ class XenOntology < Ontology::Base
 
       p guest_id
       p guest_cfg
+
+      if !XenNode.is_guest_running?(guest_id)
+        if XenNode.free_memory >= guest_cfg[:ram]
+        else
+          msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:not_enough_ram]])
+          msg.ontology = self.name
+          msg.receiver = message.sender
+          msg.in_reply_to = message.reply_with
+          self.agent.send_message(msg)
+        end
+      else
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:guest_already_running]])
+        msg.ontology = self.name
+        msg.receiver = message.sender
+        msg.in_reply_to = message.reply_with
+        self.agent.send_message(msg)
+      end
     end
   end
 
