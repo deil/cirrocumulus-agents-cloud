@@ -105,14 +105,37 @@ class XenOntology < Ontology::Base
 
   # (stop (guest ..))
   def handle_stop_request(obj, message)
-
+    if obj.first == :guest
+      guest_id = obj.second
+      if XenNode.is_guest_running?(guest_id)
+        if XenNode.stop_guest(guest_id)
+          msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
+          msg.ontology = self.name
+          msg.receiver = message.sender
+          msg.in_reply_to = message.reply_with
+          self.agent.send_message(msg)
+        else
+          msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
+          msg.ontology = self.name
+          msg.receiver = message.sender
+          msg.in_reply_to = message.reply_with
+          self.agent.send_message(msg)
+        end
+      else
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:guest_not_found]])
+        msg.ontology = self.name
+        msg.receiver = message.sender
+        msg.in_reply_to = message.reply_with
+        self.agent.send_message(msg)
+      end
+    end
   end
 
   # (reboot (guest ..))
   def handle_reboot_request(obj, message)
     if obj.first == :guest
       guest_id = obj.second
-      if XenNode::is_guest_running?(guest_id)
+      if XenNode.is_guest_running?(guest_id)
         if XenNode.reboot_guest(guest_id)
           msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
           msg.ontology = self.name
@@ -127,7 +150,7 @@ class XenOntology < Ontology::Base
           self.agent.send_message(msg)
         end
       else
-        msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:not_running]])
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:guest_not_found]])
         msg.ontology = self.name
         msg.receiver = message.sender
         msg.in_reply_to = message.reply_with
