@@ -176,7 +176,7 @@ class XenOntology < Ontology::Base
   # (start (guest (id ..) (ram ..)))
   def handle_start_request(obj, message)
     if obj.first == :guest
-      guest_cfg = {:is_hvm => 0, :vcpus => 1, :cpu_cap => 0, :cpu_weight => 128}
+      guest_cfg = {:is_hvm => 0, :vcpus => 1, :cpu_cap => 0, :cpu_weight => 128, :disks => []}
       guest_id = nil
 
       obj.each do |param|
@@ -200,6 +200,11 @@ class XenOntology < Ontology::Base
             guest_cfg[:eth0_mac] = param.second
           when :eth1
             guest_cfg[:eth1_mac] = param.second
+          when :disks
+            param.second.each do |disk|
+              next if !disk.is_a?(Array)
+              guest_cfg[:disks] << disk
+            end
         end
       end
 
