@@ -197,6 +197,7 @@ class XenOntology < Ontology::Base
         end
       end
 
+      p guest_id
       p guest_cfg
     end
   end
