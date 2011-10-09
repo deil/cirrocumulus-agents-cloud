@@ -194,6 +194,12 @@ class XenOntology < Ontology::Base
             guest_cfg[:cpu_weight] = param.second.to_i
           when :cap
             guest_cfg[:cpu_cap] = param.second.to_i
+          when :vnc
+            guest_cfg[:vnc_port] = param.second.to_i
+          when :eth0
+            guest_cfg[:eth0_mac] = param.second
+          when :eth1
+            guest_cfg[:eth1_mac] = param.second
         end
       end
 
