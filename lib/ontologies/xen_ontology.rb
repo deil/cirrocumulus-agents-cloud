@@ -201,7 +201,7 @@ class XenOntology < Ontology::Base
           when :eth1
             guest_cfg[:eth1_mac] = param.second
           when :disks
-            param.second.each do |disk|
+            param.each do |disk|
               next if !disk.is_a?(Array)
               guest_cfg[:disks] << disk
             end
