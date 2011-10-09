@@ -117,6 +117,9 @@ class XenOntology < Ontology::Base
 
       if XenNode.is_guest_running?(guest_id)
         if XenNode.stop_guest(guest_id)
+          config = DomUConfig.find_by_name(guest_id)
+          config.delete() if config
+
           msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
           msg.ontology = self.name
           msg.receiver = message.sender
@@ -213,6 +216,17 @@ class XenOntology < Ontology::Base
 
       if !XenNode.is_guest_running?(guest_id)
         if XenNode.free_memory >= guest_cfg[:ram]
+          config = DomUConfig.new(guest_id)
+          config.is_hvm = guest_cfg[:is_hvm]
+          config.ram = guest_cfg[:ram]
+          config.vcpus = guest_cfg[:vcpus]
+          config.cpu_weight = guest_cfg[:cpu_weight]
+          config.cpu_cap = guest_cfg[:cpu_cap]
+          config.disks = guest_cfg[:disks]
+          config.eth0_mac = guest_cfg[:eth0_mac]
+          config.eth1_mac = guest_cfg[:eth1_mac]
+          config.vnc_port = guest_cfg[:vnc_port]
+          config.save('cirrocumulus', message.sender)
         else
           msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:not_enough_ram]])
           msg.ontology = self.name
