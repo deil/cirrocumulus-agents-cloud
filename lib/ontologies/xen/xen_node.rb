@@ -104,7 +104,7 @@ class XenNode
 
   private
 
-  def perform_cmd(cmd)
+  def self.perform_cmd(cmd)
     Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
     Log4r::Logger['os'].debug(out)
