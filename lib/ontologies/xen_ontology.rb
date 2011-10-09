@@ -223,6 +223,9 @@ class XenOntology < Ontology::Base
           end
 
           guest = DomU.new(guest_id, guest_cfg[:ram], guest_cfg[:vcpus], guest_cfg[:disks], guest_cfg[:cpu_weight], guest_cfg[:cpu_cap])
+          guest.eth0_mac = guest_cfg[:eth0_mac] if guest_cfg[:eth0_mac]
+          guest.eth1_mac = guest_cfg[:eth1_mac] if guest_cfg[:eth1_mac]
+          guest.vnc_port = guest_cfg[:vnc_port] if guest_cfg[:vnc_port]
           p guest.to_xml
 
           config = DomUConfig.new(guest_id)
