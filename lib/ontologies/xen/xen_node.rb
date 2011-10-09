@@ -107,8 +107,8 @@ class XenNode
   def self.perform_cmd(cmd)
     Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
-    Log4r::Logger['os'].debug(out)
-    Log4r::Logger['os'].debug(err)
+    Log4r::Logger['os'].debug(out.strip)
+    Log4r::Logger['os'].debug(err.strip)
 
     err.blank?
   end
