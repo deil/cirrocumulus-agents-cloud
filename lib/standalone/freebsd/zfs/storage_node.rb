@@ -29,11 +29,10 @@ class StorageNode
 
   def self.list_volumes()
     cmd = "zfs list | grep #{VOL_NAME}/xen"
-    Log4r::Logger['os'].debug("command: " + cmd)
+    Log4r::Logger['os'].debug(cmd)
     _, res, err = systemu(cmd)
-    Log4r::Logger['os'].debug("output: " + res)
-    Log4r::Logger['os'].debug("stderr: " + err)
-    Log4r::Logger['os'].debug("done")
+    Log4r::Logger['os'].debug(res)
+    Log4r::Logger['os'].debug(err)
 
     lines = res.split("\n")
     lines.map {|line| line.split(' ').first.gsub("#{VOL_NAME}/", '') }
@@ -63,11 +62,10 @@ class StorageNode
   def self.create_volume(disk_number, size)
     disk_name = "%03d" % disk_number
     cmd = "zfs create -V #{size}G #{VOL_NAME}/xen-#{disk_name}"
-    Log4r::Logger['os'].debug("command: " + cmd)
+    Log4r::Logger['os'].debug(cmd)
     _, res, err = systemu(cmd)
-    Log4r::Logger['os'].debug("output: " + res)
-    Log4r::Logger['os'].debug("stderr: " + err)
-    Log4r::Logger['os'].debug("done")
+    Log4r::Logger['os'].debug(res)
+    Log4r::Logger['os'].debug(err)
 
     err.blank?
   end
@@ -75,11 +73,10 @@ class StorageNode
   def self.delete_volume(disk_number)
     disk_name = "%03d" % disk_number
     cmd = "zfs destroy #{VOL_NAME}/xen-#{disk_name}"
-    Log4r::Logger['os'].debug("command: " + cmd)
+    Log4r::Logger['os'].debug(cmd)
     _, res, err = systemu(cmd)
-    Log4r::Logger['os'].debug("output: " + res)
-    Log4r::Logger['os'].debug("stderr: " + err)
-    Log4r::Logger['os'].debug("done")
+    Log4r::Logger['os'].debug(res)
+    Log4r::Logger['os'].debug(err)
 
     err.blank?
   end
@@ -122,12 +119,12 @@ class StorageNode
   
   def self.is_exported?(disk_number)
     disk_name = "%03d" % disk_number
-    res = `ps aux | grep xen-#{disk_name}`
+    Logr::Logger['os'].debug("ps ax | grep xen-#{disk_name}")
+    res = `ps ax | grep xen-#{disk_name}`
     #Log4r::Logger['os'].debug("command: " + cmd)
     #_, res, err = systemu(cmd)
-    Log4r::Logger['os'].debug("output: " + res)
+    Log4r::Logger['os'].debug(res)
     #Log4r::Logger['os'].debug("stderr: " + err)
-    Log4r::Logger['os'].debug("done")
     
     res.split("\n").any? {|l| l =~ /vblade/ }
   end
@@ -138,11 +135,10 @@ class StorageNode
     
     if !is_exported?(disk_number)
       cmd = "/usr/local/sbin/vblade #{disk_number} #{slot} em1 /dev/zvol/#{VOL_NAME}/xen-#{disk_name} &"
-      Log4r::Logger['os'].debug("command: " + cmd)
+      Log4r::Logger['os'].debug(cmd)
       _, res, err = systemu(cmd)
-      Log4r::Logger['os'].debug("output: " + res)
-      Log4r::Logger['os'].debug("stderr: " + err)
-      Log4r::Logger['os'].debug("done")
+      Log4r::Logger['os'].debug(res)
+      Log4r::Logger['os'].debug(err)
       
       return err.blank?
     end
@@ -152,8 +148,9 @@ class StorageNode
 
   def self.remove_export(disk_number)
     disk_name = "%03d" % disk_number
-    out = `ps aux | grep xen-#{disk_name}`
-    puts out
+    Log4r::Logger['os'].debug("ps ax | grep xen-#{disk_name}")
+    out = `ps ax | grep xen-#{disk_name}`
+    Logr::Logger['os'].debug(out)
     out.split("\n").each do |l|
       if l =~ /vblade/
         pid = l.split(" ").second
