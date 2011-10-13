@@ -121,10 +121,11 @@ class StorageNode
     disk_name = "%03d" % disk_number
     cmd = "ps ax | grep xen-#{disk_name}"
     Log4r::Logger['os'].debug(cmd)
-    res = system(cmd)
-    Log4r::Logger['os'].debug(res)
+    _, out, err = systemu(cmd)
+    Log4r::Logger['os'].debug(out)
+    Log4r::Logger['os'].debug(err)
 
-    res.split("\n").any? {|l| l =~ /vblade/ }
+    out.split("\n").any? {|l| l =~ /vblade/ }
   end
 
   def self.add_export(disk_number, slot)
