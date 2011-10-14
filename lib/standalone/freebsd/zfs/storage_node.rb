@@ -119,7 +119,7 @@ class StorageNode
   
   def self.is_exported?(disk_number)
     disk_name = "%03d" % disk_number
-    cmd = "ps ax | grep xen-#{disk_name}"
+    cmd = "ps auxw | grep xen-#{disk_name}"
     Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
     Log4r::Logger['os'].debug(out)
@@ -147,9 +147,12 @@ class StorageNode
 
   def self.remove_export(disk_number)
     disk_name = "%03d" % disk_number
-    Log4r::Logger['os'].debug("ps ax | grep xen-#{disk_name}")
-    out = `ps ax | grep xen-#{disk_name}`
-    Logr::Logger['os'].debug(out)
+    cmd = "ps auxw | grep xen-#{disk_name}"
+    Log4r::Logger['os'].debug(cmd)
+    #out = `ps auxxw | grep xen-#{disk_name}`
+    _, out, err = systemu(cmd)
+    Log4r::Logger['os'].debug(out)
+    Log4r::Logger['os'].debug(err)
     out.split("\n").each do |l|
       if l =~ /vblade/
         pid = l.split(" ").second
