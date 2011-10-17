@@ -235,7 +235,7 @@ class XenOntology < Ontology::Base
             config.delete()
           end
 
-          if XenNode.start_guest(guest)
+          if XenNode.start_guest(guest) && XenNode.is_guest_running?(guest_id)
             config = DomUConfig.new(guest_id)
             config.is_hvm = guest_cfg[:is_hvm]
             config.ram = guest_cfg[:ram]

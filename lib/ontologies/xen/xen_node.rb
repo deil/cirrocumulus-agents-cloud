@@ -17,7 +17,8 @@ class XenNode
   end
 
   def self.is_guest_running?(guest_id)
-    return list_running_guests.include? guest_id
+    # stderr is blank if domain was found
+    perform_cmd("virsh dominfo #{guest_id}")
   end
 
   def self.total_vcpus
@@ -81,7 +82,13 @@ class XenNode
   end
 
   def self.start_guest(domU_config)
-    false
+    xml_config = File.join(AGENT_ROOT, "domu_#{domU_config.name}.xml")
+    xml = File.open(xml_config, "w")
+    xml.write(domU_config.to_xml)
+    xml.close
+
+    cmd = "virsh create #{xml_config}"
+    perform_cmd(cmd)
   end
 
   def self.reboot_guest(guest_id)
