@@ -5,7 +5,7 @@
   <os>
     <type>hvm</type>
     <loader>/usr/lib/xen-4.0/boot/hvmloader</loader>
-    <boot dev='hd network'/>
+    <boot dev='<%= @network_boot == 1 ? 'network' : 'hd' %>'/>
   </os>
   <features>
     <acpi/>
