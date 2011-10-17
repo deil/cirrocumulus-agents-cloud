@@ -162,6 +162,56 @@ class StorageOntology < Ontology::Base
       perform_create_volume(disk_number, disk_size, message)
     elsif obj.first == :export
       perform_create_export(disk_number, disk_slot, message)
+    elsif obj.first == :disk
+      perform_create_disk(disk_number, disk_slot, disk_size, message)
+    end
+  end
+
+  # (create (disk (disk_number ..) (size ..)))
+  # (create (disk (disk_number ..) (size ..) (slot ..))
+  def perform_create_disk(disk_number, disk_slot, disk_size, message)
+    if StorageNode.volume_exists?(disk_number)
+      msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:already_exists]])
+      msg.ontology = self.name
+      msg.receiver = message.sender
+      msg.in_reply_to = message.reply_with
+      self.agent.send_message(msg)
+    elsif StorageNode.free_space < disk_size
+      msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:not_enough_space]])
+      msg.ontology = self.name
+      msg.receiver = message.sender
+      msg.in_reply_to = message.reply_with
+      self.agent.send_message(msg)
+    else # preconditions ok, try to create
+      if !StorageNode.create_volume(disk_number, disk_size)
+        msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unable_to_create_volume]])
+        msg.ontology = self.name
+        msg.receiver = message.sender
+        msg.in_reply_to = message.reply_with
+        self.agent.send_message(msg)
+      else
+        disk = VirtualDisk.new(disk_number, disk_size)
+        disk.save('cirrocumulus', message.sender)
+
+        if !StorageNode.add_export?(disk_number, disk_slot)
+          msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unable_to_add_export]])
+          msg.ontology = self.name
+          msg.receiver = message.sender
+          msg.in_reply_to = message.reply_with
+          self.agent.send_message(msg)
+        else # success
+          state = VirtualDiskState.find_by_disk_number(disk_number)
+          state = VirtualDiskState.new(disk_number, true) unless state
+          state.is_up = true
+          state.save('cirrocumulus', message.sender)
+
+          msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
+          msg.ontology = self.name
+          msg.receiver = message.sender
+          msg.in_reply_to = message.reply_with
+          self.agent.send_message(msg)
+        end
+      end
     end
   end
 
