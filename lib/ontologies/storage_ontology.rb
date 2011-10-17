@@ -193,7 +193,7 @@ class StorageOntology < Ontology::Base
         disk = VirtualDisk.new(disk_number, disk_size)
         disk.save('cirrocumulus', message.sender)
 
-        if !StorageNode.add_export?(disk_number, disk_slot)
+        if !StorageNode.add_export(disk_number, disk_slot)
           msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unable_to_add_export]])
           msg.ontology = self.name
           msg.receiver = message.sender
