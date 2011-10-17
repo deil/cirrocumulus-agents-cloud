@@ -218,12 +218,6 @@ class XenOntology < Ontology::Base
 
       if !XenNode.is_guest_running?(guest_id)
         if XenNode.free_memory >= guest_cfg[:ram]
-          config = DomUConfig.find_by_name(guest_id)
-          if config
-            logger.warn("locally stored config for guest #{guest_id} already exists! deleted")
-            config.delete()
-          end
-
           guest = DomU.new(guest_id, guest_cfg[:is_hvm] == 1 ? :hvm : :pv, guest_cfg[:ram])
           guest.vcpus = guest_cfg[:vcpus]
           guest.disks = guest_cfg[:disks]
@@ -233,20 +227,40 @@ class XenOntology < Ontology::Base
           guest.eth1_mac = guest_cfg[:eth1_mac] if guest_cfg[:eth1_mac]
           guest.network_boot = guest_cfg[:network_boot]
           guest.vnc_port = guest_cfg[:vnc_port] if guest_cfg[:vnc_port]
-          p guest.to_xml
+          #p guest.to_xml
 
-          config = DomUConfig.new(guest_id)
-          config.is_hvm = guest_cfg[:is_hvm]
-          config.ram = guest_cfg[:ram]
-          config.vcpus = guest_cfg[:vcpus]
-          config.cpu_weight = guest_cfg[:cpu_weight]
-          config.cpu_cap = guest_cfg[:cpu_cap]
-          config.disks = guest_cfg[:disks]
-          config.eth0_mac = guest_cfg[:eth0_mac]
-          config.eth1_mac = guest_cfg[:eth1_mac]
-          config.vnc_port = guest_cfg[:vnc_port]
-          config.boot_device = guest_cfg[:network_boot] == 1 ? 'network' : 'hd'
-          config.save('cirrocumulus', message.sender)
+          config = DomUConfig.find_by_name(guest_id)
+          if config
+            logger.warn("locally stored config for guest '#{guest_id}' already exists! deleted")
+            config.delete()
+          end
+
+          if XenNode.start_guest(guest)
+            config = DomUConfig.new(guest_id)
+            config.is_hvm = guest_cfg[:is_hvm]
+            config.ram = guest_cfg[:ram]
+            config.vcpus = guest_cfg[:vcpus]
+            config.cpu_weight = guest_cfg[:cpu_weight]
+            config.cpu_cap = guest_cfg[:cpu_cap]
+            config.disks = guest_cfg[:disks]
+            config.eth0_mac = guest_cfg[:eth0_mac]
+            config.eth1_mac = guest_cfg[:eth1_mac]
+            config.vnc_port = guest_cfg[:vnc_port]
+            config.boot_device = guest_cfg[:network_boot] == 1 ? 'network' : 'hd'
+            config.save('cirrocumulus', message.sender)
+
+            msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
+            msg.ontology = self.name
+            msg.receiver = message.sender
+            msg.in_reply_to = message.reply_with
+            self.agent.send_message(msg)
+          else
+            msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
+            msg.ontology = self.name
+            msg.receiver = message.sender
+            msg.in_reply_to = message.reply_with
+            self.agent.send_message(msg)
+          end
         else
           msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:not_enough_ram]])
           msg.ontology = self.name

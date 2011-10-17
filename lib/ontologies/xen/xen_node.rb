@@ -80,6 +80,10 @@ class XenNode
     err.blank?
   end
 
+  def self.start_guest(domU_config)
+    false
+  end
+
   def self.reboot_guest(guest_id)
     perform_cmd("virsh reboot #{guest_id}")
   end
