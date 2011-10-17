@@ -179,7 +179,7 @@ class XenOntology < Ontology::Base
   # (start (guest (id ..) (ram ..)))
   def handle_start_request(obj, message)
     if obj.first == :guest
-      guest_cfg = {:is_hvm => 0, :vcpus => 1, :cpu_cap => 0, :cpu_weight => 128, :disks => []}
+      guest_cfg = {:is_hvm => 0, :vcpus => 1, :cpu_cap => 0, :cpu_weight => 128, :disks => [], :network_boot => 0}
       guest_id = nil
 
       obj.each do |param|
@@ -208,6 +208,8 @@ class XenOntology < Ontology::Base
               next if !disk.is_a?(Array)
               guest_cfg[:disks] << disk
             end
+          when :network_boot
+            guest_cfg[:network_boot] = param.second.to_i
         end
       end
 
@@ -222,9 +224,14 @@ class XenOntology < Ontology::Base
             config.delete()
           end
 
-          guest = DomU.new(guest_id, guest_cfg[:ram], guest_cfg[:vcpus], guest_cfg[:disks], guest_cfg[:cpu_weight], guest_cfg[:cpu_cap])
+          guest = DomU.new(guest_id, guest_cfg[:is_hvm] == 1 ? :hvm : :pv, guest_cfg[:ram])
+          guest.vcpus = guest_cfg[:vcpus]
+          guest.disks = guest_cfg[:disks]
+          guest.cpu_weight = guest_cfg[:cpu_weight]
+          guest.cpu_cap = guest_cfg[:cpu_cap]
           guest.eth0_mac = guest_cfg[:eth0_mac] if guest_cfg[:eth0_mac]
           guest.eth1_mac = guest_cfg[:eth1_mac] if guest_cfg[:eth1_mac]
+          guest.network_boot = guest_cfg[:network_boot]
           guest.vnc_port = guest_cfg[:vnc_port] if guest_cfg[:vnc_port]
           p guest.to_xml
 
@@ -238,6 +245,7 @@ class XenOntology < Ontology::Base
           config.eth0_mac = guest_cfg[:eth0_mac]
           config.eth1_mac = guest_cfg[:eth1_mac]
           config.vnc_port = guest_cfg[:vnc_port]
+          config.boot_device = guest_cfg[:network_boot] == 1 ? 'network' : 'hd'
           config.save('cirrocumulus', message.sender)
         else
           msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:not_enough_ram]])

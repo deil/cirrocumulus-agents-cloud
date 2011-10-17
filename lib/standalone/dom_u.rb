@@ -2,7 +2,8 @@ require 'erb'
 
 class DomU
   attr_accessor :name
-  attr_accessor :mem
+  attr_accessor :type
+  attr_accessor :ram
   attr_accessor :vcpus
   attr_accessor :disks
   attr_accessor :cpu_weight
@@ -10,21 +11,20 @@ class DomU
   attr_accessor :eth0_mac
   attr_accessor :eth1_mac
   attr_accessor :vnc_port
+  attr_accessor :network_boot
 
-  def initialize(name, mem, vcpus, disks, cpu_weight, cpu_cap)
-    @name = name
-    @mem = mem
-    @vcpus = vcpus
-    @disks = disks
-    @cpu_weight = cpu_weight
-    @cpa_cap = cpu_cap
-    #@eth0_mac = "00:16:3e:1b:00:#{@id.to_s(16)}"
-    #@eth1_mac = "00:16:3e:1b:a0:#{@id.to_s(16)}"
-    #@vnc_port = 5900 + @id
+  def initialize(name, type, ram)
+    self.name = name
+    self.type = type
+    self.ram = ram
+    self.vcpus = 1
+    self.disks = []
+    self.cpu_weight = ram
+    self.cpu_cap = 0
   end
 
   def to_xml
-    template_file = File.open(File.join(AGENT_ROOT, 'standalone/domU.xml'))
+    template_file = File.open(File.join(AGENT_ROOT, "standalone/domU_#{self.type.to_s}.xml"))
     template = template_file.read()
     template_file.close()
 
