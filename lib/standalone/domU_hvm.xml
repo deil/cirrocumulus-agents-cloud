@@ -10,7 +10,7 @@
   <features>
     <acpi/>
     <apic/>
-    <!--<pae/> -->
+    <pae/>
   </features>
   <clock offset='utc'/>
   <on_poweroff>destroy</on_poweroff>
