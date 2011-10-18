@@ -181,7 +181,7 @@ class XenOntology < Ontology::Base
   # (start (guest (id ..) (ram ..)))
   def handle_start_request(obj, message)
     if obj.first == :guest
-      guest_cfg = {:is_hvm => 0, :vcpus => 1, :cpu_cap => 0, :cpu_weight => 128, :disks => [], :network_boot => 0}
+      guest_cfg = {:is_hvm => 0, :vcpus => 1, :cpu_cap => 0, :cpu_weight => 128, :eth => [], :disks => [], :network_boot => 0}
       guest_id = nil
 
       obj.each do |param|
@@ -201,10 +201,11 @@ class XenOntology < Ontology::Base
             guest_cfg[:cpu_cap] = param.second.to_i
           when :vnc
             guest_cfg[:vnc_port] = param.second.to_i
-          when :eth0
-            guest_cfg[:eth0_mac] = param.second
-          when :eth1
-            guest_cfg[:eth1_mac] = param.second
+          when :eth
+            param.each_with_index do |eth, i|
+              next if i == 0 # :eth
+              guest_cfg[:eth] << eth
+            end
           when :disks
             param.each do |disk|
               next if !disk.is_a?(Array)
@@ -223,11 +224,10 @@ class XenOntology < Ontology::Base
       guest.disks = guest_cfg[:disks]
       guest.cpu_weight = guest_cfg[:cpu_weight]
       guest.cpu_cap = guest_cfg[:cpu_cap]
-      guest.eth0_mac = guest_cfg[:eth0_mac] if guest_cfg[:eth0_mac]
-      guest.eth1_mac = guest_cfg[:eth1_mac] if guest_cfg[:eth1_mac]
+      guest.eth0_mac = guest_cfg[:eth].first if guest_cfg[:eth].size > 0
+      guest.eth1_mac = guest_cfg[:eth].second if guest_cfg[:eth].size > 1
       guest.network_boot = guest_cfg[:network_boot]
       guest.vnc_port = guest_cfg[:vnc_port] if guest_cfg[:vnc_port]
-      #p guest.to_xml
 
       saga = create_saga(StartGuestSaga)
       saga.start(guest, message)
