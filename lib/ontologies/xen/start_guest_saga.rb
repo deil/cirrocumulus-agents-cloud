@@ -23,7 +23,7 @@ class StartGuestSaga < Saga
     msg.ontology = @ontology.name
     msg.receiver = @context.sender
     msg.in_reply_to = @context.reply_with
-    @ontology.agent.send(msg)
+    @ontology.agent.send_message(msg)
   end
 
 end
