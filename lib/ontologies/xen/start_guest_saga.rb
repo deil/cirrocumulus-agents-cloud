@@ -19,7 +19,7 @@ class StartGuestSaga < Saga
   private
 
   def notify_finished()
-    msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
+    msg = Cirrocumulus::Message.new(nil, 'inform', [@message.content, [:finished]])
     msg.ontology = @ontology.name
     msg.receiver = @context.sender
     msg.in_reply_to = @context.reply_with
