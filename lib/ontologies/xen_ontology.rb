@@ -1,6 +1,8 @@
+require 'cirrocumulus/saga'
 require File.join(AGENT_ROOT, 'ontologies/xen/dom_u_kb.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_db.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_node.rb')
+require File.join(AGENT_ROOT, 'ontologies/xen/start_guest_saga.rb')
 require File.join(AGENT_ROOT, 'standalone/mdraid.rb')
 require File.join(AGENT_ROOT, 'standalone/dom_u.rb')
 require File.join(AGENT_ROOT, 'standalone/mac.rb')
@@ -213,8 +215,8 @@ class XenOntology < Ontology::Base
         end
       end
 
-      p guest_id
-      p guest_cfg
+      #p guest_id
+      #p guest_cfg
 
       if !XenNode.is_guest_running?(guest_id)
         if XenNode.free_memory >= guest_cfg[:ram]
@@ -235,6 +237,9 @@ class XenOntology < Ontology::Base
             config.delete()
           end
 
+          saga = create_saga(StartGuestSaga)
+          saga.start(guest, message)
+=begin
           if XenNode.start_guest(guest) && XenNode.is_guest_running?(guest_id)
             config = DomUConfig.new(guest_id)
             config.is_hvm = guest_cfg[:is_hvm]
@@ -261,6 +266,7 @@ class XenOntology < Ontology::Base
             msg.in_reply_to = message.reply_with
             self.agent.send_message(msg)
           end
+=end
         else
           msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:not_enough_ram]])
           msg.ontology = self.name
