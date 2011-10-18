@@ -29,7 +29,6 @@ class StartGuestSaga < Saga
           config.delete()
         end
 
-=begin
         if XenNode.start_guest(guest) && XenNode.is_guest_running?(guest_id)
           config = DomUConfig.new(guest_id)
           config.is_hvm = guest_cfg[:is_hvm]
@@ -48,7 +47,6 @@ class StartGuestSaga < Saga
         else
           notify_failure(:unknown_reason)
         end
-=end
       else
         notify_refused(:not_enough_ram)
       end
