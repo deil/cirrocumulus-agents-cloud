@@ -15,7 +15,8 @@ class XenOntology < Ontology::Base
   end
 
   def restore_state()
-    XenNode.set_cpu(0, 10000, 0)
+    @engine.assert [:just_started]
+    
     changes_made = 0
     Mdraid.list_disks().each do |discovered|
       disk = VirtualDisk.find_by_disk_number(discovered)
