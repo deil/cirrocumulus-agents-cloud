@@ -1,4 +1,5 @@
 require 'cirrocumulus/saga'
+require File.join(AGENT_ROOT, 'ontologies/xen/xen_engine.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/dom_u_kb.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_db.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_node.rb')
@@ -10,6 +11,7 @@ require File.join(AGENT_ROOT, 'standalone/mac.rb')
 class XenOntology < Ontology::Base
   def initialize(agent)
     super('cirrocumulus-xen', agent)
+    @engine = XenEngine.new
   end
 
   def restore_state()
@@ -22,6 +24,7 @@ class XenOntology < Ontology::Base
       logger.info "autodiscovered virtual disk %d" % [discovered]
       disk = VirtualDisk.new(discovered)
       disk.save('discovered')
+      @engine.assert [:virtual_disk, discovered]
     end
 
     known_disks = VirtualDisk.all
@@ -29,6 +32,8 @@ class XenOntology < Ontology::Base
       if Mdraid.get_status(disk.disk_number) == :stopped
         logger.info "bringing up disk %d" % [disk.disk_number]
         changes_made += 1 if Mdraid.assemble(disk.disk_number)
+      else
+      @engine.assert [:virtual_disk, disk.disk_number]
       end
     end
 
