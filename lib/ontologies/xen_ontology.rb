@@ -25,7 +25,7 @@ class XenOntology < Ontology::Base
       logger.info "autodiscovered virtual disk %d" % [discovered]
       disk = VirtualDisk.new(discovered)
       disk.save('discovered')
-      @engine.assert [:virtual_disk, discovered]
+      @engine.assert [:virtual_disk, discovered, :active]
     end
 
     known_disks = VirtualDisk.all
@@ -34,11 +34,27 @@ class XenOntology < Ontology::Base
         logger.info "bringing up disk %d" % [disk.disk_number]
         changes_made += 1 if Mdraid.assemble(disk.disk_number)
       else
-      @engine.assert [:virtual_disk, disk.disk_number]
+        @engine.assert [:virtual_disk, disk.disk_number, :active]
       end
     end
 
     logger.info "restored state, made %d changes" % [changes_made]
+  end
+  
+  def handle_tick()
+    @tick_counter ||= 10 # init counter
+    
+    if @tick_counter == 5 # main loop
+      VirtualDisk.all.each do |disk|
+        @engine.assert [:mdraid, disk.disk_number, :failed] if Mdraid.get_status(disk.disk_number) == :failed
+      end
+    end
+    
+    if @tick_counter <= 0    
+      @tick_counter = 10
+    else
+      @tick_counter -= 1
+    end
   end
 
   def handle_message(message, kb)
