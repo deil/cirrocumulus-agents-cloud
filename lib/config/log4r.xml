@@ -14,7 +14,7 @@
   <logger name="cirrocumulus" level="ALL" additive="false" trace="true">
 	  <outputter>console</outputter>
   </logger>
-  <logger name="kb" level="ALL" additive="false" trace="true">
+  <logger name="kb" level="INFO" additive="false" trace="true">
 	  <outputter>console</outputter>
   </logger>
 </log4r_config>
