@@ -71,9 +71,17 @@ class Mdraid
     cmd = "cat /proc/mdstat | grep md#{disk_number}"
     Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
-    Log4r::Logger['os'].debug(out)
+    Log4r::Logger['os'].debug(out.strip)
     results = out.scan /etherd\/e#{disk_number}\.(\d)/
     results.map {|r| "e%d.%s" % [disk_number, r.first]}
+  end
+  
+  def component_up?(device)
+    cmd = "cat /proc/mdstat | grep md#{disk_number}"
+    Log4r::Logger['os'].debug(cmd)
+    _, out, err = systemu(cmd)
+    Log4r::Logger['os'].debug(out.strip)
+    return !(out =~ /#{device}\[\d\]\[F\]/).nil?
   end
 
   private
