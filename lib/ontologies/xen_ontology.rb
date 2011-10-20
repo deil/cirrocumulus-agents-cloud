@@ -42,16 +42,16 @@ class XenOntology < Ontology::Base
   end
   
   def handle_tick()
-    @tick_counter ||= 10 # init counter
+    @tick_counter ||= 30 # init counter
     
-    if @tick_counter == 5 # main loop
+    if @tick_counter == 25 # main loop
       VirtualDisk.all.each do |disk|
         @engine.assert [:mdraid, disk.disk_number, :failed] if Mdraid.get_status(disk.disk_number) == :failed
       end
     end
     
     if @tick_counter <= 0    
-      @tick_counter = 10
+      @tick_counter = 30
     else
       @tick_counter -= 1
     end
