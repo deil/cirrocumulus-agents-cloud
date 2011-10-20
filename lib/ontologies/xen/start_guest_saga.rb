@@ -29,23 +29,27 @@ class StartGuestSaga < Saga
           config.delete()
         end
 
-        if XenNode.start_guest(guest) && XenNode.is_guest_running?(guest.name)
-          config = DomUConfig.new(guest.name)
-          config.is_hvm = guest.type == :hvm
-          config.ram = guest.ram
-          config.vcpus = guest.vcpus
-          config.cpu_weight = guest.cpu_weight
-          config.cpu_cap = guest.cpu_cap
-          config.disks = guest.disks
-          config.eth0_mac = guest.eth0_mac
-          config.eth1_mac = guest.eth1_mac
-          config.vnc_port = guest.vnc_port
-          config.boot_device = gues.network_boot == 1 ? 'network' : 'hd'
-          config.save('cirrocumulus', message.sender)
+        if guest.disks.all? {|disk_cfg| Mdraid.get_status(disk_cfg.second) == :active}
+          if XenNode.start_guest(guest) && XenNode.is_guest_running?(guest.name)
+            config = DomUConfig.new(guest.name)
+            config.is_hvm = guest.type == :hvm
+            config.ram = guest.ram
+            config.vcpus = guest.vcpus
+            config.cpu_weight = guest.cpu_weight
+            config.cpu_cap = guest.cpu_cap
+            config.disks = guest.disks
+            config.eth0_mac = guest.eth0_mac
+            config.eth1_mac = guest.eth1_mac
+            config.vnc_port = guest.vnc_port
+            config.boot_device = gues.network_boot == 1 ? 'network' : 'hd'
+            config.save('cirrocumulus', message.sender)
 
-          notify_finished()
+            notify_finished()
+          else
+            notify_failure(:unknown_reason)
+          end
         else
-          notify_failure(:unknown_reason)
+          notify_failure(:not_all_disks_active)
         end
       else
         notify_refused(:not_enough_ram)
