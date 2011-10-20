@@ -27,7 +27,7 @@ class Mdraid
     return :failed if out.include? 'degraded'
     :active
   end
-
+  
   def self.create(disk_number)
     exports = check_aoe(disk_number)
     devices = exports_to_aoe_devices(exports)
@@ -59,6 +59,21 @@ class Mdraid
     Log4r::Logger['os'].debug(out)
     Log4r::Logger['os'].debug(err)
     return err.blank? || err.include?("stopped ")
+  end
+  
+  attr_reader :disk_number
+  
+  def initialize(disk_number)
+    @disk_number = disk_number
+  end
+  
+  def aoe_devices
+    cmd = "cat /proc/mdstat | grep md#{disk_number}"
+    Log4r::Logger['os'].debug(cmd)
+    _, out, err = systemu(cmd)
+    Log4r::Logger['os'].debug(out)
+    results = out.scan /etherd\/e#{disk_number}\.(\d)/
+    results.map {|r| "e%d.%s" % [disk_number, r.first]}
   end
 
   private
