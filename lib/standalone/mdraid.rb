@@ -44,7 +44,7 @@ class Mdraid
   def self.assemble(disk_number)
     exports = check_aoe(disk_number)
     devices = exports_to_aoe_devices(exports)
-    cmd = "mdadm --assemble /dev/md#{disk_id} " + devices.join(' ') + " --run"
+    cmd = "mdadm --assemble /dev/md#{disk_number} " + devices.join(' ') + " --run"
     Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
     Log4r::Logger['os'].debug(out.strip)
