@@ -81,7 +81,7 @@ class Mdraid
     Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
     Log4r::Logger['os'].debug(out.strip)
-    return !(out =~ /#{device}\[\d\]\[F\]/).nil?
+    return !(out =~ /#{device}\[\d\]\[F\]/.nil?)
   end
 
   private
