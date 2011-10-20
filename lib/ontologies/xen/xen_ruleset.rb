@@ -16,6 +16,6 @@ class XenEngine < RuleEngine::Base
     Log4r::Logger['kb'].debug "md#{x}: checking AoE devices count"
     Log4r::Logger['kb'].debug "md#{x}: found %d device(s) - %s" % [raid.aoe_devices.size, raid.aoe_devices.inspect]
 
-    engine.retract [:mdraid, x:, :repairing]
+    engine.retract [:mdraid, x, :repairing]
   end
 end
