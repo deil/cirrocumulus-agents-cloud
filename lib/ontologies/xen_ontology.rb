@@ -46,7 +46,7 @@ class XenOntology < Ontology::Base
     
     if @tick_counter == 25 # main loop
       VirtualDisk.all.each do |disk|
-        @engine.assert [:mdraid, disk.disk_number, :failed] if Mdraid.get_status(disk.disk_number) == :failed
+        #@engine.assert [:mdraid, disk.disk_number, :failed] if Mdraid.get_status(disk.disk_number) == :failed
       end
     end
     
