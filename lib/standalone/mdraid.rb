@@ -35,8 +35,8 @@ class Mdraid
     cmd = "mdadm --create /dev/md#{disk_number} --force --run --level=1 --raid-devices=2 -binternal --bitmap-chunk=1024 --metadata=1.2 " + devices.join(' ')
     Log4r::Logger['os'].info(cmd)
     _, out, err = systemu(cmd)
-    Log4r::Logger['os'].debug(out)
-    Log4r::Logger['os'].debug(err)
+    Log4r::Logger['os'].debug(out.strip)
+    Log4r::Logger['os'].debug(err.strip)
 
     err =~ /array \/dev\/md#{disk_number} started/
   end

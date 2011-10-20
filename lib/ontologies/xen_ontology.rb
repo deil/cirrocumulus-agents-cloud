@@ -334,11 +334,57 @@ class XenOntology < Ontology::Base
         msg.in_reply_to = message.reply_with
         self.agent.send_message(msg)
       end
-
     end
   end
 
   def handle_create_request(obj, message)
+    if obj.first == :disk
+      disk_number = nil
+      obj.each do |param|
+        if param.is_a?(Array) && param.first == :disk_number
+          disk_number = param.second.to_i
+        end
+      end
+
+      if Mdraid.get_status(disk_number) == :stopped
+        disk = VirtualDisk.find_by_disk_number(disk_number)
+        if disk
+          logger.warn("locally stored config for virtual disk '#{disk_number}' already exists! deleted")
+          disk.delete()
+        end
+
+        if Mdraid.check_aoe(disk_number).size == 0
+          msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:no_visible_exports]])
+          msg.ontology = self.name
+          msg.receiver = message.sender
+          msg.in_reply_to = message.reply_with
+          self.agent.send_message(msg)
+        else
+          if Mdraid.create(disk_number)
+            disk = VirtualDisk.new(disk_number)
+            disk.save('cirrocumulus', message.sender)
+
+            msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
+            msg.ontology = self.name
+            msg.receiver = message.sender
+            msg.in_reply_to = message.reply_with
+            self.agent.send_message(msg)
+          else
+            msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
+            msg.ontology = self.name
+            msg.receiver = message.sender
+            msg.in_reply_to = message.reply_with
+            self.agent.send_message(msg)
+          end
+        end
+      else
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:already_exists]])
+        msg.ontology = self.name
+        msg.receiver = message.sender
+        msg.in_reply_to = message.reply_with
+        self.agent.send_message(msg)
+      end
+    end
   end
 
 end
