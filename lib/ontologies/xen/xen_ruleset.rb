@@ -7,7 +7,7 @@ class XenEngine < RuleEngine::Base
   end
   
   rule 'repair_mdraid', [[:virtual_disk, :X, :active], [:mdraid, :X, :failed]] do |engine, params|
-    if !engine.query [:mdraid, params[:X], :repairing] && !engine.query [:mdraid, params[:X], :unable_to_repair]
+    if !engine.query([:mdraid, params[:X], :repairing]) && !engine.query([:mdraid, params[:X], :unable_to_repair])
       x = params[:X]
       engine.assert [:mdraid, x, :repairing]
       Log4r::Logger['kb'].info "MD device for virtual disk #{x} has failed, attempting to repair"
