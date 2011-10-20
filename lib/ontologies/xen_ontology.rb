@@ -11,12 +11,13 @@ require File.join(AGENT_ROOT, 'standalone/mac.rb')
 class XenOntology < Ontology::Base
   def initialize(agent)
     super('cirrocumulus-xen', agent)
-    @engine = XenEngine.new
+    #@engine = XenEngine.new
   end
 
   def restore_state()
-    @engine.assert [:just_started]
-    
+    #@engine.assert [:just_started]
+    XenNode.set_cpu(0, 10000, 0)
+
     changes_made = 0
     Mdraid.list_disks().each do |discovered|
       disk = VirtualDisk.find_by_disk_number(discovered)
@@ -25,7 +26,7 @@ class XenOntology < Ontology::Base
       logger.info "autodiscovered virtual disk %d" % [discovered]
       disk = VirtualDisk.new(discovered)
       disk.save('discovered')
-      @engine.assert [:virtual_disk, discovered, :active]
+      #@engine.assert [:virtual_disk, discovered, :active]
     end
 
     known_disks = VirtualDisk.all
@@ -34,7 +35,7 @@ class XenOntology < Ontology::Base
         logger.info "bringing up disk %d" % [disk.disk_number]
         changes_made += 1 if Mdraid.assemble(disk.disk_number)
       else
-        @engine.assert [:virtual_disk, disk.disk_number, :active]
+        #@engine.assert [:virtual_disk, disk.disk_number, :active]
       end
     end
 
