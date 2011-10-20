@@ -23,6 +23,8 @@ class XenEngine < RuleEngine::Base
       elsif devices.size == 1 # only one device, need to re-add second one
         Log4r::Logger['kb'].info "md#{x} solution: need to re-add second device"
       elsif devices.size == 2 && (devices_state.first == false || devices_state.second == false)
+        failed_device = devices_state.first == false ? devices.first : devices.second
+        Log4r::Logger['kb'].info "md#{x} solution: repair AoE export #{failed_device}"
       else # WTF!?
         Log4r::Logger['kb'].info "md#{x}: device states are %s" % devices_state.inspect
         Log4r::Logger['kb'].info "md#{x} solution: NO SOLUTION"
