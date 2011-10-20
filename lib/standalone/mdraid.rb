@@ -47,8 +47,8 @@ class Mdraid
     cmd = "mdadm --assemble /dev/md#{disk_id} " + devices.join(' ') + " --run"
     Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
-    Log4r::Logger['os'].debug(out)
-    Log4r::Logger['os'].debug(err)
+    Log4r::Logger['os'].debug(out.strip)
+    Log4r::Logger['os'].debug(err.strip)
     err.blank? || err.include?("has been started")
   end
 
@@ -56,11 +56,27 @@ class Mdraid
     cmd = "mdadm -S /dev/md#{disk_number}"
     Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
-    Log4r::Logger['os'].debug(out)
-    Log4r::Logger['os'].debug(err)
+    Log4r::Logger['os'].debug(out.strip)
+    Log4r::Logger['os'].debug(err.strip)
     return err.blank? || err.include?("stopped ")
   end
-  
+
+  def self.check_aoe(disk_number)
+    exports = []
+    cmd = "aoe-stat"
+    Log4r::Logger['os'].debug(cmd)
+    _, res = systemu(cmd)
+    lines = res.split("\n")
+    lines.each do |line|
+      l = line.split(" ")
+      if l.first =~ /e#{disk_number}\.\d/
+        exports << l.first if l[4] == 'up'
+      end
+    end
+
+    exports
+  end
+
   attr_reader :disk_number
   
   def initialize(disk_number)
@@ -85,22 +101,6 @@ class Mdraid
   end
 
   private
-
-  def self.check_aoe(disk_number)
-    exports = []
-    cmd = "aoe-stat"
-    Log4r::Logger['os'].debug(cmd)
-    _, res = systemu(cmd)
-    lines = res.split("\n")
-    lines.each do |line|
-      l = line.split(" ")
-      if l.first =~ /e#{disk_number}\.\d/
-        exports << l.first if l[4] == 'up'
-      end
-    end
-
-    exports
-  end
 
   def self.exports_to_aoe_devices(exports)
     exports.map {|e| '/dev/etherd/' + e}
