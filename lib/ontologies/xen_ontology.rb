@@ -303,21 +303,29 @@ class XenOntology < Ontology::Base
           disk.delete()
         end
 
-        if Mdraid.assemble(disk_number)
-          disk = VirtualDisk.new(disk_number)
-          disk.save('cirrocumulus', message.sender)
-
-          msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
+        if Mdraid.check_aoe(disk_number).size == 0
+          msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:no_visible_exports]])
           msg.ontology = self.name
           msg.receiver = message.sender
           msg.in_reply_to = message.reply_with
           self.agent.send_message(msg)
         else
-          msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
-          msg.ontology = self.name
-          msg.receiver = message.sender
-          msg.in_reply_to = message.reply_with
-          self.agent.send_message(msg)
+          if Mdraid.assemble(disk_number)
+            disk = VirtualDisk.new(disk_number)
+            disk.save('cirrocumulus', message.sender)
+
+            msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
+            msg.ontology = self.name
+            msg.receiver = message.sender
+            msg.in_reply_to = message.reply_with
+            self.agent.send_message(msg)
+          else
+            msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
+            msg.ontology = self.name
+            msg.receiver = message.sender
+            msg.in_reply_to = message.reply_with
+            self.agent.send_message(msg)
+          end
         end
       else
         msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:already_exists]])
