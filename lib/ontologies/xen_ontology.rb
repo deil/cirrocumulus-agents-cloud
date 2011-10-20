@@ -164,6 +164,38 @@ class XenOntology < Ontology::Base
         msg.in_reply_to = message.reply_with
         self.agent.send_message(msg)
       end
+    elsif obj.first == :disk
+      disk_number = nil
+      obj.each do |param|
+        if param.is_a?(Array) && param.first == :disk_number
+          disk_number = param.second.to_i
+        end
+      end
+
+      disk = VirtualDisk.find_by_disk_number(disk_number)
+      if disk
+        if Mdraid.stop(disk_number)
+          disk.delete()
+
+          msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
+          msg.ontology = self.name
+          msg.receiver = message.sender
+          msg.in_reply_to = message.reply_with
+          self.agent.send_message(msg)
+        else
+          msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
+          msg.ontology = self.name
+          msg.receiver = message.sender
+          msg.in_reply_to = message.reply_with
+          self.agent.send_message(msg)
+        end
+      else
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:disk_not_found]])
+        msg.ontology = self.name
+        msg.receiver = message.sender
+        msg.in_reply_to = message.reply_with
+        self.agent.send_message(msg)
+      end
     end
   end
 

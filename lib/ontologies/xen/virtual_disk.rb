@@ -1,3 +1,4 @@
+=begin
 class VirtualDisk
   def self.check_state(disk_number)
     _, res = systemu "cat /proc/mdstat | grep md#{disk_number}"
@@ -8,3 +9,4 @@ class VirtualDisk
     return line.split(" ")[2] == "active" ? :connected : :failed
   end
 end
+=end
