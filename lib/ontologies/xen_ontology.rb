@@ -296,7 +296,7 @@ class XenOntology < Ontology::Base
         end
       end
 
-      if Mdraid.get_status == :stopped
+      if Mdraid.get_status(disk_number) == :stopped
         disk = VirtualDisk.find_by_disk_number(disk_number)
         if disk
           logger.warn("locally stored config for virtual disk '#{disk_number}' already exists! deleted")
