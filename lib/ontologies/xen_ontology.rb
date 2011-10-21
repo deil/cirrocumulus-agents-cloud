@@ -100,9 +100,29 @@ class XenOntology < Ontology::Base
 
     if obj.first == :running
       msg.content = handle_running_query(obj) ? obj : [:not, obj]
+    elsif obj.first == :active
+      msg.content = handle_active_query(obj) ? obj : [:not, obj]
     end
 
     msg
+  end
+  
+  # (active (disk (disk_number ..)))
+  def handle_active_query(obj)
+    obj.each do |p|
+      next if !p.is_a?(Array)
+      if p.first == :disk
+        disk_number = nil
+        param = p.second
+        if param.is_a?(Array) && param.first == :disk_number
+          disk_number = param.second.to_i
+        end
+        
+        return Mdraid.get_status(disk_number) == :active
+      end
+    end
+    
+    false
   end
 
   # (running (guest ..))
