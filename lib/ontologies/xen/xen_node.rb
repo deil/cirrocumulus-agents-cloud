@@ -36,7 +36,7 @@ class XenNode
   end
 
   def self.free_memory
-    @@libvirt.node_free_memory / 1024
+    @@libvirt.node_free_memory / (1024*1024)
   end
 
   def self.get_cpu(domU)
