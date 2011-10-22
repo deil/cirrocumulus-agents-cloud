@@ -1,4 +1,5 @@
 require 'systemu'
+require 'libvirt'
 
 class XenNode
   def self.list_running_guests()
@@ -22,27 +23,20 @@ class XenNode
   end
 
   def self.total_vcpus
-    _, res = system('virsh nodeinfo')
-    res =~ /CPU\(s\): +(\d)/
-    $1.to_i
+    @@libvirt.node_get_info.cpus
   end
   
   def self.total_mhz
-    _, res = system('virsh nodeinfo')
-    res =~ /CPU frequency: +(\d+) MHz/
-    vcpu_mhz = $1.to_i
-    total_vcpus * vcpu_mhz
+    info = @@libvirt.node_get_info
+    info.cpus * info.mhz
   end
   
   def self.total_memory
-    _, res = systemu('virsh nodeinfo')
-    res =~ /Memory size: +(\d+) kB/
-    $1.to_i / 1024
+    @@libvirt.node_get_info.memory / 1024
   end
 
   def self.free_memory
-    _, res = systemu 'virsh freecell'
-    res.split(' ')[1].to_i / 1024
+    @@libvirt.node_free_memory / 1024
   end
 
   def self.get_cpu(domU)
@@ -111,6 +105,14 @@ class XenNode
     puts cmd
     _, res, err = systemu(cmd)
     err.blank?
+  end
+  
+  def self.connect()
+    @@libvirt = Libvirt::open()
+  end
+  
+  def self.close()
+    @@libvirt.close()
   end
 
   private

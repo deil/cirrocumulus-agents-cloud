@@ -16,6 +16,7 @@ class XenOntology < Ontology::Base
 
   def restore_state()
     #@engine.assert [:just_started]
+    XenNode.connect()
     XenNode.set_cpu(0, 10000, 0)
 
     changes_made = 0
