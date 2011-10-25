@@ -12,7 +12,7 @@ require File.join(AGENT_ROOT, 'standalone/mac.rb')
 class XenOntology < Ontology::Base
   def initialize(agent)
     super('cirrocumulus-xen', agent)
-    #@engine = XenEngine.new
+    @engine = XenEngine.new
   end
 
   def restore_state()
@@ -62,6 +62,8 @@ class XenOntology < Ontology::Base
 
   def handle_message(message, kb)
     case message.act
+      when 'inform' then
+        @engine.assert message.content
       when 'query-ref' then
         msg = query(message.content)
         msg.receiver = message.sender

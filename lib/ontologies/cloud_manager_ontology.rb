@@ -23,6 +23,8 @@ class CloudManagerOntology < Ontology::Base
 
   def handle_message(message, kb)
     case message.act
+      when 'inform' then
+        @engine.assert message.content
       when 'query-ref' then
         msg = query(message.content)
         msg.receiver = message.sender

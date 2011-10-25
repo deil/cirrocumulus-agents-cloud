@@ -10,7 +10,7 @@ class DomU
   attr_accessor :cpu_cap
   attr_accessor :vnc_port
   attr_accessor :network_boot
-  attr_accessor :bridge
+  attr_accessor :default_bridge
   attr_accessor :ethernets
 
   def initialize(name, type, ram)
@@ -21,7 +21,7 @@ class DomU
     self.disks = []
     self.cpu_weight = ram
     self.cpu_cap = 0
-    self.bridge = XEN_CONFIG[:default_bridge]
+    self.default_bridge = XEN_CONFIG[:default_bridge]
     self.ethernets = []
   end
   
