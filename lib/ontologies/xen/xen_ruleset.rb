@@ -17,6 +17,7 @@ class XenEngine < RuleEngine::Base
     msg = Cirrocumulus::Message.new(nil, 'inform', [:guest, guest, :powered_off])
     msg.ontology = 'cirrocumulus-cloud'
     engine.agent.send_message(msg) if engine.agent
+    entine.retract [:guest, guest, :powered_off]
   end
   
   rule 'guest_powered_on', [[:guest, :X, :powered_on]] do |engine, params|
@@ -25,6 +26,7 @@ class XenEngine < RuleEngine::Base
     msg = Cirrocumulus::Message.new(nil, 'inform', [:guest, guest, :powered_on])
     msg.ontology = 'cirrocumulus-cloud'
     engine.agent.send_message(msg) if engine.agent
+    engine.retract [:guest, guest, :powered_on]
   end
   
   rule 'repair_mdraid', [[:virtual_disk, :X, :active], [:mdraid, :X, :failed]] do |engine, params|
