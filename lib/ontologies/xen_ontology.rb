@@ -57,7 +57,7 @@ class XenOntology < Ontology::Base
       
       known_guests.each do |guest|
         if !running_guests.include? guest
-          logger.warn "Guest #{guest} has been powered off"
+          @engine.assert [:guest, guest, :powered_off] if !@engine.query([:guest, guest, :powered_off])
         end
       end
     end

@@ -5,6 +5,10 @@ class XenEngine < RuleEngine::Base
     engine.retract [:just_started]
   end
   
+  rule 'guest_powered_off', [[:guest, :X, :powered_iff]] do |engine, params|
+    Log4r::Logger['kb'].warn "Guest #{guest} has been powered off"
+  end
+  
   rule 'repair_mdraid', [[:virtual_disk, :X, :active], [:mdraid, :X, :failed]] do |engine, params|
     if !engine.query([:mdraid, params[:X], :repairing]) && !engine.query([:mdraid, params[:X], :unable_to_repair])
       x = params[:X]

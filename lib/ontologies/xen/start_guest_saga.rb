@@ -43,6 +43,8 @@ class StartGuestSaga < Saga
             config.boot_device = guest.network_boot == 1 ? 'network' : 'hd'
             config.save('cirrocumulus', @message.sender)
 
+            @ontology.engine.retract [:guest, guest.name, :powered_off]
+            @ontology.engine.assert [:guest, guest.name, :running]
             notify_finished()
           else
             notify_failure(:unknown_reason)
