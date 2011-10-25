@@ -5,7 +5,7 @@ class XenEngine < RuleEngine::Base
     engine.retract [:just_started]
   end
   
-  rule 'guest_powered_off', [[:guest, :X, :powered_iff]] do |engine, params|
+  rule 'guest_powered_off', [[:guest, :X, :powered_off]] do |engine, params|
     guest = params[:X]
     Log4r::Logger['kb'].warn "Guest #{guest} has been powered off"
   end
