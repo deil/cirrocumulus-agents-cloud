@@ -1,5 +1,5 @@
 require 'cirrocumulus/saga'
-require File.join(AGENT_ROOT, 'ontologies/xen/xen_config.rb')
+require File.join(AGENT_ROOT, 'config/xen_config.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_ruleset.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/dom_u_kb.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_db.rb')
