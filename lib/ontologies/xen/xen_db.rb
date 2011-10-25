@@ -14,7 +14,7 @@ class VirtualDisk
 
   def self.all
     disks = []
-    KnownFact.all(:conditions => ['key like "md%%"']).each do |f|
+    KnownFact.current.all(:conditions => ['key like "md%%"']).each do |f|
       if f.key =~ /md(\d+)$/
         disk_number = $1.to_i
         disks << self.find_by_disk_number(disk_number)
@@ -107,6 +107,7 @@ class DomUConfig
   end
 end
 
+=begin
 class GuestState
   attr_reader :name
   attr_accessor :is_up
@@ -136,6 +137,7 @@ class GuestState
     fact.update_attributes(:is_active => false) if fact
   end
 end
+=end
 
 ActiveRecord::Base.establish_connection(
   :adapter => 'sqlite3',

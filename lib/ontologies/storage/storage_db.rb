@@ -16,7 +16,7 @@ class VirtualDisk
 
   def self.all
     disks = []
-    KnownFact.all(:conditions => ['key like "vd%%"']).each do |f|
+    KnownFact.current.all(:conditions => ['key like "vd%%"']).each do |f|
       if f.key =~ /vd(\d+)$/
         disk_number = $1.to_i
         disks << self.find_by_disk_number(disk_number)
