@@ -8,7 +8,7 @@ class CloudManagerOntology < Ontology::Base
   
   def initialize(agent)
     super('cirrocumulus-cloud', agent)
-    @engine = CloudRuleset.new
+    @engine = CloudRuleset.new(self)
   end
 
   def restore_state()

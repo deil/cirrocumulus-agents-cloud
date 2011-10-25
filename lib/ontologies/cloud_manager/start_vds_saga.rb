@@ -16,6 +16,7 @@ class StartVdsSaga < Saga
     @message = message
     
     Log4r::Logger['agent'].info "[#{id}] Starting VDS #{vds.uid} (#{vds.id}) with RAM=#{vds.current.ram}Mb"
+    @ontology.engine.assert [:vds, vds.uid, :starting]
     handle()
   end
   
@@ -158,9 +159,11 @@ class StartVdsSaga < Saga
 
         change_state(STATE_WAITING_FOR_GUEST)
         set_timeout(LONG_TIMEOUT)
+        
       when STATE_WAITING_FOR_GUEST
         if message
           if message.act == 'inform' && message.content.last[0] == :finished
+            @ontology.engine.retract [:vds, vds.uid, :starting]
             @ontology.engine.assert [:vds, vds.uid, :running_on, message.sender]
             @selected_host[:failed] = false
             finish()

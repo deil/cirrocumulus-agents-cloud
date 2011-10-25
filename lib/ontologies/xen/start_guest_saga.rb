@@ -7,6 +7,7 @@ class StartGuestSaga < Saga
     @guest = guest
 
     Log4r::Logger['agent'].info "[#{id}] attempting to start guest #{guest.name}"
+    @ontology.engine.assert [:guest, guest.name, :starting]
     handle()
   end
 
@@ -44,6 +45,7 @@ class StartGuestSaga < Saga
             config.save('cirrocumulus', @message.sender)
 
             @ontology.engine.retract [:guest, guest.name, :powered_off]
+            @ontology.engine.retract [:guest, guest.name, :starting]
             @ontology.engine.assert [:guest, guest.name, :running]
             notify_finished()
           else
