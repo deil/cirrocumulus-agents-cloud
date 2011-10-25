@@ -25,7 +25,7 @@ class StartGuestSaga < Saga
 
         config = DomUConfig.find_by_name(self.guest.name)
         if config
-          logger.warn("locally stored config for guest '#{self.guest.name}' already exists! deleted")
+          Log4r::Logger['agent'].warn("locally stored config for guest '#{self.guest.name}' already exists! deleted")
           config.delete()
         end
 
