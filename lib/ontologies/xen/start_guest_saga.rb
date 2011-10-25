@@ -41,7 +41,7 @@ class StartGuestSaga < Saga
             config.eth0_mac = guest.eth0_mac
             config.eth1_mac = guest.eth1_mac
             config.vnc_port = guest.vnc_port
-            config.boot_device = gues.network_boot == 1 ? 'network' : 'hd'
+            config.boot_device = guest.network_boot == 1 ? 'network' : 'hd'
             config.save('cirrocumulus', message.sender)
 
             notify_finished()
