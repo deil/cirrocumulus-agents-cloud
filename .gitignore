@@ -4,3 +4,5 @@ lib/databases/*.sqlite
 Gemfile.lock
 .idea
 .bundle
+lib/config/xen_config.rb
+lib/ontologies/cloud_manager/cloud_db-o1.rb
