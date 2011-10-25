@@ -79,7 +79,7 @@ class DomUConfig
 
   def self.all
     domus = []
-    KnownFact.all(:conditions => ['key like "domu_%%"']).each do |f|
+    KnownFact.current.all(:conditions => ['key like "domu_%%"']).each do |f|
       if f.key =~ /domu_(\w+)$/
         domu_name = $1
         domus << self.find_by_name(domu_name)
