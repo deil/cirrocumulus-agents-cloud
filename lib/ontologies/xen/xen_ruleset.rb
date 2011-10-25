@@ -1,6 +1,10 @@
 require 'cirrocumulus/rule_engine'
 
 class XenEngine < RuleEngine::Base
+  def initialize(agent)
+    @agent = agent
+  end
+  
   rule 'initialize', [[:just_started]] do |engine, params|
     engine.retract [:just_started]
   end
@@ -8,6 +12,9 @@ class XenEngine < RuleEngine::Base
   rule 'guest_powered_off', [[:guest, :X, :powered_off]] do |engine, params|
     guest = params[:X]
     Log4r::Logger['kb'].warn "Guest #{guest} has been powered off"
+    msg = Cirrocumulus::Message.new(nil, 'inform', [:guest, guest, :powered_off])
+    msg.ontology = 'cirrocumulus-cloud'
+    @agent.send_message(msg)
   end
   
   rule 'repair_mdraid', [[:virtual_disk, :X, :active], [:mdraid, :X, :failed]] do |engine, params|

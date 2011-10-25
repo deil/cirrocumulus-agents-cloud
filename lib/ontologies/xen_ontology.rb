@@ -14,7 +14,7 @@ class XenOntology < Ontology::Base
   
   def initialize(agent)
     super('cirrocumulus-xen', agent)
-    @engine = XenEngine.new
+    @engine = XenEngine.new(agent)
   end
 
   def restore_state()
