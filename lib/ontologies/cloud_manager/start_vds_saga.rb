@@ -45,6 +45,7 @@ class StartVdsSaga < Saga
             clear_timeout()
             Log4r::Logger['agent'].info "[#{id}] VDS #{vds.uid} is already running on #{message.sender}"
             @ontology.engine.assert [:vds, vds.uid, :running_on, message.sender]
+            @ontology.engine.retract [:vds, vds.uid, :starting]
             notify_refused(:already_running)
             finish()
           elsif reply == :not
@@ -163,6 +164,7 @@ class StartVdsSaga < Saga
       when STATE_WAITING_FOR_GUEST
         if message
           if message.act == 'inform' && message.content.last[0] == :finished
+            @ontology.engine.retract [:guest, vds.uid, :powered_off]
             @ontology.engine.retract [:vds, vds.uid, :starting]
             @ontology.engine.assert [:vds, vds.uid, :running_on, message.sender]
             @selected_host[:failed] = false

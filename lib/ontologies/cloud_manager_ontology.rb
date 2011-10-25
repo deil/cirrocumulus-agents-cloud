@@ -1,5 +1,5 @@
 require 'cirrocumulus/saga'
-require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_db-o1.rb')
+require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_db.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_ruleset.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/start_vds_saga.rb')
 
@@ -13,8 +13,8 @@ class CloudManagerOntology < Ontology::Base
 
   def restore_state()
     VpsConfiguration.running.each do |vds|
-      saga = create_saga(StartVdsSaga)
-      saga.start(vds, nil)
+      @engine.assert [:vds, vds.uid, :should_be_running]
+      start_vds(vds)
     end
   end
   
@@ -42,6 +42,11 @@ class CloudManagerOntology < Ontology::Base
       when 'request' then
         handle_request(message)
     end
+  end
+  
+  def start_vds(vds)
+    saga = create_saga(StartVdsSaga)
+    saga.start(vds, nil)
   end
 
   private
