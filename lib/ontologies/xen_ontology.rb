@@ -77,7 +77,7 @@ class XenOntology < Ontology::Base
       when 'request'
         handle_request(message)
       else
-        msg = Cirrocumulus::Message.new(nil, 'not-understood', [[message.content], [:not_supported]])
+        msg = Cirrocumulus::Message.new(nil, 'not-understood', [message.content, :not_supported])
         msg.receiver = message.sender
         msg.ontology = self.name
         msg.in_reply_to = message.reply_with
@@ -156,7 +156,7 @@ class XenOntology < Ontology::Base
     elsif action == :create
       handle_create_request(message.content.second, message)
     else
-      msg = Cirrocumulus::Message.new(nil, 'not-understood', [[message.content], [:action_not_supported]])
+      msg = Cirrocumulus::Message.new(nil, 'not-understood', [message.content, :action_not_supported])
       msg.receiver = message.sender
       msg.ontology = self.name
       msg.in_reply_to = message.reply_with

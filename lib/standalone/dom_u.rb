@@ -12,6 +12,7 @@ class DomU
   attr_accessor :eth1_mac
   attr_accessor :vnc_port
   attr_accessor :network_boot
+  attr_accessor :bridge
 
   def initialize(name, type, ram)
     self.name = name
@@ -21,7 +22,7 @@ class DomU
     self.disks = []
     self.cpu_weight = ram
     self.cpu_cap = 0
-    @bridge = XEN_CONFIG[:bridge]
+    self.bridge = XEN_CONFIG[:bridge]
   end
 
   def to_xml
