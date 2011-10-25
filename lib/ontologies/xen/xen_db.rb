@@ -55,8 +55,7 @@ class DomUConfig
   attr_accessor :cpu_weight
   attr_accessor :cpu_cap
   attr_accessor :disks
-  attr_accessor :eth0_mac
-  attr_accessor :eth1_mac
+  attr_accessor :ethernets
   attr_accessor :vnc_port
   attr_accessor :boot_device
 
@@ -101,8 +100,7 @@ class DomUConfig
     domU.cpu_weight = json['cpu_weight']
     domU.cpu_cap = json['cpu_cap']
     domU.disks = json['disks'] # TODO
-    domU.eth0_mac = json['eth0_mac']
-    domU.eth1_mac = json['eth1_mac']
+    domU.ethernets = json['ethernets'] # TODO
     domU.vnc_port = json['vnc_port']
     domU.boot_device = json['boot_device']
     return domU

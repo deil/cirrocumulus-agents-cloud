@@ -8,11 +8,10 @@ class DomU
   attr_accessor :disks
   attr_accessor :cpu_weight
   attr_accessor :cpu_cap
-  attr_accessor :eth0_mac
-  attr_accessor :eth1_mac
   attr_accessor :vnc_port
   attr_accessor :network_boot
   attr_accessor :bridge
+  attr_reader :ethernets
 
   def initialize(name, type, ram)
     self.name = name
@@ -22,7 +21,16 @@ class DomU
     self.disks = []
     self.cpu_weight = ram
     self.cpu_cap = 0
-    self.bridge = XEN_CONFIG[:bridge]
+    self.bridge = XEN_CONFIG[:default_bridge]
+    self.ethernets = []
+  end
+  
+  def eth0_mac
+    return ethernets && ethernets.size > 0 ? ethernets[0] : nil
+  end
+
+  def eth1_mac
+    return ethernets && ethernets.size > 1 ? ethernets[1] : nil
   end
 
   def to_xml

@@ -1,3 +1,4 @@
 XEN_CONFIG = {
-    :bridge => 'eth0'
+    :default_bridge => 'eth0',
+    :bridges => []
 }

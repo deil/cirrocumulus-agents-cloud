@@ -313,8 +313,7 @@ class XenOntology < Ontology::Base
       guest.disks = guest_cfg[:disks]
       guest.cpu_weight = guest_cfg[:cpu_weight]
       guest.cpu_cap = guest_cfg[:cpu_cap]
-      guest.eth0_mac = guest_cfg[:eth].first if guest_cfg[:eth].size > 0
-      guest.eth1_mac = guest_cfg[:eth].second if guest_cfg[:eth].size > 1
+      guest.ethernets = guest_cfg[:eth]
       guest.network_boot = guest_cfg[:network_boot]
       guest.vnc_port = guest_cfg[:vnc_port] if guest_cfg[:vnc_port]
 

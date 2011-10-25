@@ -38,8 +38,10 @@ class StartGuestSaga < Saga
             config.cpu_weight = guest.cpu_weight
             config.cpu_cap = guest.cpu_cap
             config.disks = guest.disks
-            config.eth0_mac = guest.eth0_mac
-            config.eth1_mac = guest.eth1_mac
+            ethernets = []
+            ethernets << guest.eth0_mac if guest.eth0_mac
+            ethernets << guest.eth1_mac if guest.eth1_mac
+            config.ethernets = ethernets
             config.vnc_port = guest.vnc_port
             config.boot_device = guest.network_boot == 1 ? 'network' : 'hd'
             config.save('cirrocumulus', @message.sender)

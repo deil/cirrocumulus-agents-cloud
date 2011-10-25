@@ -21,7 +21,7 @@
     </disk>
     <% end %>
     <interface type='bridge'>
-      <source bridge='<%= @bridge %>' />
+      <source bridge='<%= @default_bridge %>' />
       <% if @eth0_mac %>
       <mac address='<%= @eth0_mac %>'/>
       <% end %>
@@ -29,7 +29,7 @@
     </interface>
     <% if @eth1_mac %>
     <interface type='bridge'>
-      <source bridge='<%= @bridge %>' />
+      <source bridge='<%= @default_bridge %>' />
       <mac address='<%= @eth1_mac %>'/>
       <script path='/etc/xen/scripts/vif-bridge'/>
     </interface>
