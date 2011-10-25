@@ -3,3 +3,4 @@ lib/databases/*.sqlite
 *.sqlite
 Gemfile.lock
 .idea
+.bundle
