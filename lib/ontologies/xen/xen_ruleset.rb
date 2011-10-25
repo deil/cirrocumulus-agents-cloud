@@ -1,6 +1,8 @@
 require 'cirrocumulus/rule_engine'
 
 class XenEngine < RuleEngine::Base
+  attr_reader :agent
+  
   def initialize(agent)
     @agent = agent
   end
@@ -14,7 +16,7 @@ class XenEngine < RuleEngine::Base
     Log4r::Logger['kb'].warn "Guest #{guest} has been powered off"
     msg = Cirrocumulus::Message.new(nil, 'inform', [:guest, guest, :powered_off])
     msg.ontology = 'cirrocumulus-cloud'
-    @agent.send_message(msg)
+    engine.agent.send_message(msg) if engine.agent
   end
   
   rule 'repair_mdraid', [[:virtual_disk, :X, :active], [:mdraid, :X, :failed]] do |engine, params|
