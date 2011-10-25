@@ -3,7 +3,7 @@ require 'libvirt'
 
 class XenNode
   def self.list_running_guests()
-    guests = @@libvirt.list_domains().map {|dom_id| @@libvirt.lookup_domain.by_id(dom_id).name}
+    guests = @@libvirt.list_domains().map {|dom_id| @@libvirt.lookup_domain_by_id(dom_id).name}
     guests.shift
     guests
   end
