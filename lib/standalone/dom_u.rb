@@ -21,6 +21,7 @@ class DomU
     self.disks = []
     self.cpu_weight = ram
     self.cpu_cap = 0
+    @bridge = XEN_CONFIG[:bridge]
   end
 
   def to_xml

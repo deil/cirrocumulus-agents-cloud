@@ -1,63 +1,24 @@
 require 'cirrocumulus/saga'
-require File.join(AGENT_ROOT, 'ontologies/xen/xen_config.rb')
-require File.join(AGENT_ROOT, 'ontologies/xen/xen_ruleset.rb')
-require File.join(AGENT_ROOT, 'ontologies/xen/dom_u_kb.rb')
-require File.join(AGENT_ROOT, 'ontologies/xen/xen_db.rb')
-require File.join(AGENT_ROOT, 'ontologies/xen/xen_node.rb')
-require File.join(AGENT_ROOT, 'ontologies/xen/start_guest_saga.rb')
-require File.join(AGENT_ROOT, 'standalone/mdraid.rb')
-require File.join(AGENT_ROOT, 'standalone/dom_u.rb')
-require File.join(AGENT_ROOT, 'standalone/mac.rb')
+require File.join(AGENT_ROOT, 'ontologies/cloud_manager/db_config.rb')
+require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_ruleset.rb')
+require File.join(AGENT_ROOT, 'ontologies/cloud_manager/start_vds_saga.rb')
 
-class XenOntology < Ontology::Base
+class CloudManagerOntology < Ontology::Base
+  attr_reader :engine
+  
   def initialize(agent)
-    super('cirrocumulus-xen', agent)
-    #@engine = XenEngine.new
+    super('cirrocumulus-cloud', agent)
+    @engine = CloudRuleset.new
   end
 
   def restore_state()
-    #@engine.assert [:just_started]
-    XenNode.connect()
-    XenNode.set_cpu(0, 10000, 0)
-
-    changes_made = 0
-    Mdraid.list_disks().each do |discovered|
-      disk = VirtualDisk.find_by_disk_number(discovered)
-      next if disk
-
-      logger.info "autodiscovered virtual disk %d" % [discovered]
-      disk = VirtualDisk.new(discovered)
-      disk.save('discovered')
-      #@engine.assert [:virtual_disk, discovered, :active]
+    VpsConfiguration.running.each do |vps|
+      saga = create_saga(StartVdsSaga)
+      saga.start(vps, nil)
     end
-
-    known_disks = VirtualDisk.all
-    known_disks.each do |disk|
-      if Mdraid.get_status(disk.disk_number) == :stopped
-        logger.info "bringing up disk %d" % [disk.disk_number]
-        changes_made += 1 if Mdraid.assemble(disk.disk_number)
-      else
-        #@engine.assert [:virtual_disk, disk.disk_number, :active]
-      end
-    end
-
-    logger.info "restored state, made %d changes" % [changes_made]
   end
   
   def handle_tick()
-    @tick_counter ||= 30 # init counter
-    
-    if @tick_counter == 25 # main loop
-      VirtualDisk.all.each do |disk|
-        #@engine.assert [:mdraid, disk.disk_number, :failed] if Mdraid.get_status(disk.disk_number) == :failed
-      end
-    end
-    
-    if @tick_counter <= 0    
-      @tick_counter = 30
-    else
-      @tick_counter -= 1
-    end
   end
 
   def handle_message(message, kb)
