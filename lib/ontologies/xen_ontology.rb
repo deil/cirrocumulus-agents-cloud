@@ -45,16 +45,25 @@ class XenOntology < Ontology::Base
   end
   
   def handle_tick()
-    @tick_counter ||= 30 # init counter
+    @tick_counter ||= 60 # init counter
     
-    if @tick_counter == 25 # main loop
+    if @tick_counter == 55 # main loop
       VirtualDisk.all.each do |disk|
         #@engine.assert [:mdraid, disk.disk_number, :failed] if Mdraid.get_status(disk.disk_number) == :failed
+      end
+      
+      known_guests = DomUConfig.all.map {|domu| domu.name}
+      running_guests = XenNode.list_running_guests()
+      
+      known_guests.each do |guest|
+        if !running_guests.include? guest
+          logger.warn "Guest #{guest} has been powered off"
+        end
       end
     end
     
     if @tick_counter <= 0    
-      @tick_counter = 30
+      @tick_counter = 60
     else
       @tick_counter -= 1
     end
