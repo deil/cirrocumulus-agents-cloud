@@ -10,6 +10,8 @@ require File.join(AGENT_ROOT, 'standalone/dom_u.rb')
 require File.join(AGENT_ROOT, 'standalone/mac.rb')
 
 class XenOntology < Ontology::Base
+  attr_reader :engine
+  
   def initialize(agent)
     super('cirrocumulus-xen', agent)
     @engine = XenEngine.new
