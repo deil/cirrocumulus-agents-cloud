@@ -19,7 +19,7 @@ class XenEngine < RuleEngine::Base
     engine.agent.send_message(msg) if engine.agent
   end
   
-  rule 'guest_powered_on', [[:guest, :X, :powered_on]], do |engine, params|
+  rule 'guest_powered_on', [[:guest, :X, :powered_on]] do |engine, params|
     guest = params[:X]
     Log4r::Logger['kb'].info "Unrecognized guest #{guest} has been powered on"
     msg = Cirrocumulus::Message.new(nil, 'inform', [:guest, guest, :powered_on])
