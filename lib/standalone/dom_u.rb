@@ -11,7 +11,7 @@ class DomU
   attr_accessor :vnc_port
   attr_accessor :network_boot
   attr_accessor :bridge
-  attr_reader :ethernets
+  attr_accessor :ethernets
 
   def initialize(name, type, ram)
     self.name = name
