@@ -22,13 +22,10 @@ class StartVdsSaga < Saga
         msg.reply_with = @id
         @ontology.agent.send_message(msg)
         change_state(STATE_SEARCHING_FOR_GUEST)
+        set_timeout(LONG_TIMEOUT)
         
       when STATE_SEARCHING_FOR_GUEST
-        reply = message.content.first
-        if reply == :running
-          notify_refused(:already_running)
-          finish()
-        elsif reply == :not
+        if message.nil?
           msg = Cirrocumulus::Message.new(nil, 'query-ref', [:free_memory])
           msg.ontology = 'cirrocumulus-xen'
           msg.reply_with = @id
@@ -36,6 +33,15 @@ class StartVdsSaga < Saga
           @hosts = []
           change_state(STATE_SELECTING_HOST)
           set_timeout(LONG_TIMEOUT)
+        else
+          reply = message.content.first
+          if reply == :running
+            clear_timeout()
+            Log4r::Logger['agent'].info "[#{id}] VDS #{vds.vps_id} is already running on #{message.sender}"
+            notify_refused(:already_running)
+            finish()
+          elsif reply == :not
+          end
         end
 
       when STATE_SELECTING_HOST

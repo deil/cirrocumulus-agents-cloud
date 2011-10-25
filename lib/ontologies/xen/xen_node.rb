@@ -3,23 +3,15 @@ require 'libvirt'
 
 class XenNode
   def self.list_running_guests()
-    domus = []
-
-    _, res = systemu 'virsh list'
-    list = res.split("\n")
-    list.each_with_index do |item,idx|
-      next if idx < 3
-      items = item.split(' ')
-      domU = items[1]
-      domus << domU
-    end
-
-    domus
+    guests = @@libvirt.list_domains().map {|dom_id| @@libvirt.lookup_domain.by_id(dom_id).name}
+    guests.shift
+    guests
   end
 
   def self.is_guest_running?(guest_id)
-    # stderr is blank if domain was found
-    perform_cmd("virsh dominfo #{guest_id}")
+    @@libvirt.lookup_domain_by_name(guest_id)
+  rescue
+    false
   end
 
   def self.total_vcpus

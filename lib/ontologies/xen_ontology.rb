@@ -68,16 +68,20 @@ class XenOntology < Ontology::Base
         msg.ontology = self.name
         msg.in_reply_to = message.reply_with
         self.agent.send_message(msg)
-
       when 'query-if'
         msg = query_if(message.content)
         msg.receiver = message.sender
         msg.ontology = self.name
         msg.in_reply_to = message.reply_with
         self.agent.send_message(msg)
-
-      when 'request' then
+      when 'request'
         handle_request(message)
+      else
+        msg = Cirrocumulus::Message.new(nil, 'not-understood', [[message.content], [:not_supported]])
+        msg.receiver = message.sender
+        msg.ontology = self.name
+        msg.in_reply_to = message.reply_with
+        self.agent.send_message(msg)
     end
   end
 
@@ -151,6 +155,12 @@ class XenOntology < Ontology::Base
       handle_start_request(message.content.second, message)
     elsif action == :create
       handle_create_request(message.content.second, message)
+    else
+      msg = Cirrocumulus::Message.new(nil, 'not-understood', [[message.content], [:action_not_supported]])
+      msg.receiver = message.sender
+      msg.ontology = self.name
+      msg.in_reply_to = message.reply_with
+      self.agent.send_message(msg)
     end
   end
 
