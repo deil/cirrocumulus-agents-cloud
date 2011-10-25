@@ -25,14 +25,6 @@ class DomU
     self.ethernets = []
   end
   
-  def eth0_mac
-    return ethernets && ethernets.size > 0 ? ethernets[0] : nil
-  end
-
-  def eth1_mac
-    return ethernets && ethernets.size > 1 ? ethernets[1] : nil
-  end
-
   def to_xml
     template_file = File.open(File.join(AGENT_ROOT, "standalone/domU_#{self.type.to_s}.xml"))
     template = template_file.read()
