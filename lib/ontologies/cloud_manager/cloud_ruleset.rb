@@ -5,6 +5,31 @@ class CloudRuleset < RuleEngine::Base
   def initialize(ontology)
     @ontology = ontology
   end
+  
+  rule 'vds_should_be_stopped', [[:vds, :VDS, :running_on, :NODE], [:vds, :VDS, :should_be_stopped]] do |engine, params|
+    vds = params[:VDS]
+    
+    if !engine.query([:vds, vds, :stopping])
+      node = params[:NODE]
+      Log4r::Logger['kb'].info "Stopping VDS #{vds} (running on #{node})"
+      engine.assert [:vds, vds, :stopping]
+      engine.retract [:vds, vds, :should_be_running] if engine.query [:vds, vds, :should_be_running]
+      engine.ontology.stop_vds(VpsConfiguration.find_by_uid(vds))
+    end
+  end
+  
+  rule 'vds_should_be_running', [[:vds, :VDS, :should_be_running]] do |engine, params|
+    vds = params[:VDS]
+    
+    if !engine.query([:vds, vds, :starting]) && !engine.query([:guest, vds, :powered_off])
+      matched_nodes = engine.match [:vds, vds, :running_on, :NODE]
+      if matched_nodes.empty?
+        Log4r::Logger['kb'].info "Starting VDS #{vds}"
+        engine.assert [:vds, vds, :starting]
+        engine.ontology.start_vds(VpsConfiguration.find_by_uid(vds))
+      end
+    end
+  end
 
   rule 'running_vds_suddenly_terminated', [[:vds, :VDS, :should_be_running], [:guest, :VDS, :powered_off]] do |engine, params|
     vds = params[:VDS]

@@ -164,8 +164,8 @@ class StartVdsSaga < Saga
       when STATE_WAITING_FOR_GUEST
         if message
           if message.act == 'inform' && message.content.last[0] == :finished
-            @ontology.engine.retract [:guest, vds.uid, :powered_off]
-            @ontology.engine.retract [:vds, vds.uid, :starting]
+            @ontology.engine.retract [:guest, vds.uid, :powered_off], true
+            @ontology.engine.retract [:vds, vds.uid, :starting], true
             @ontology.engine.assert [:vds, vds.uid, :running_on, message.sender]
             @selected_host[:failed] = false
             finish()
