@@ -16,7 +16,7 @@ class StartVdsSaga < Saga
     @message = message
     
     Log4r::Logger['agent'].info "[#{id}] Starting VDS #{vds.uid} (#{vds.id}) with RAM=#{vds.current.ram}Mb"
-    @ontology.engine.assert [:vds, vds.uid, :starting]
+    @ontology.engine.assert [:vds, vds.uid, :starting] if !@ontology.engine.query([:vds, vds.uid, :starting])
     handle()
   end
   
