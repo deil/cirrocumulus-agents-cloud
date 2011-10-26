@@ -10,7 +10,7 @@ class XenEngine < RuleEngine::Base
   rule 'initialize', [[:just_started]] do |engine, params|
     XenNode.connect()
     XenNode.set_cpu(0, 10000, 0)
-    msg = Cirrocumulus::Message.new(nil, 'inform', [:node, engine.ontology.agent.identifier, XenNode.free_memory])
+    msg = Cirrocumulus::Message.new(nil, 'inform', [:node, "%s-%s" % [system('hostname'), ontology.name], XenNode.free_memory])
     msg.ontology = 'cirrocumulus-cloud'
     engine.ontology.agent.send_message(msg)
     engine.retract [:just_started]
@@ -21,7 +21,7 @@ class XenEngine < RuleEngine::Base
     Log4r::Logger['kb'].warn "Guest #{guest} has been powered off"
     msg = Cirrocumulus::Message.new(nil, 'inform', [:guest, guest, :powered_off])
     msg.ontology = 'cirrocumulus-cloud'
-    engine.agent.send_message(msg) if engine.agent
+    engine.ontology.agent.send_message(msg) if engine.agent
     engine.retract [:guest, guest, :just_powered_off]
     engine.retract [:guest, guest, :powered_on] if engine.query [:guest, guest, :powered_on]
     engine.assert [:guest, guest, :powered_off]
@@ -32,7 +32,7 @@ class XenEngine < RuleEngine::Base
     Log4r::Logger['kb'].info "Unrecognized guest #{guest} has been powered on"
     msg = Cirrocumulus::Message.new(nil, 'inform', [:guest, guest, :powered_on])
     msg.ontology = 'cirrocumulus-cloud'
-    engine.agent.send_message(msg) if engine.agent
+    engine.ontology.agent.send_message(msg) if engine.agent
     engine.retract [:guest, guest, :just_powered_on]
     engine.retract [:guest, guest, :powered_off] if engine.query [:guest, guest, :powered_off]
     engine.assert [:guest, guest, :powered_on]
