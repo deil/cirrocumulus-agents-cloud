@@ -1,10 +1,10 @@
 require 'cirrocumulus/rule_engine'
 
 class XenEngine < RuleEngine::Base
-  attr_reader :agent
+  attr_reader :ontology
   
-  def initialize(agent)
-    @agent = agent
+  def initialize(ontology)
+    @ontology = ontology
   end
   
   rule 'initialize', [[:just_started]] do |engine, params|
