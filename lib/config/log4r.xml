@@ -11,7 +11,7 @@
   <logger name="agent" level="ALL" additive="false" trace="true">
 	  <outputter>console</outputter>
   </logger>
-  <logger name="cirrocumulus" level="ALL" additive="false" trace="true">
+  <logger name="cirrocumulus" level="INFO" additive="false" trace="true">
 	  <outputter>console</outputter>
   </logger>
   <logger name="kb" level="INFO" additive="false" trace="true">

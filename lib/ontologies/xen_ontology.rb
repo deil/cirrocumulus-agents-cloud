@@ -18,9 +18,7 @@ class XenOntology < Ontology::Base
   end
 
   def restore_state()
-    #@engine.assert [:just_started]
-    XenNode.connect()
-    XenNode.set_cpu(0, 10000, 0)
+    @engine.assert [:just_started]
 
     changes_made = 0
     Mdraid.list_disks().each do |discovered|

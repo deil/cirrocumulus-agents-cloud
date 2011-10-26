@@ -18,6 +18,13 @@ class CloudRuleset < RuleEngine::Base
     end
   end
   
+  rule 'vds_should_be_stopped_but_started_externally', [[:guest, :VDS, :powered_on], [:vds, :VDS, :should_be_stopped]] do |engine, params|
+    vds = params[:VDS]
+    if engine.match([:vds, vds, :running_on, :NODE]).empty?
+      Log4r::Logger['kb'].warn "Externally started VDS #{vds}"
+    end
+  end
+  
   rule 'vds_should_be_running', [[:vds, :VDS, :should_be_running]] do |engine, params|
     vds = params[:VDS]
     

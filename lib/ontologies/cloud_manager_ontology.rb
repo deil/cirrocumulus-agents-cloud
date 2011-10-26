@@ -25,6 +25,7 @@ class CloudManagerOntology < Ontology::Base
     case message.act
       when 'inform' then
         @engine.assert message.content
+
       when 'query-ref' then
         msg = query(message.content)
         msg.receiver = message.sender
@@ -32,7 +33,7 @@ class CloudManagerOntology < Ontology::Base
         msg.in_reply_to = message.reply_with
         self.agent.send_message(msg)
 
-      when 'query-if'
+      when 'query-if' then
         msg = query_if(message.content)
         msg.receiver = message.sender
         msg.ontology = self.name
@@ -74,8 +75,6 @@ class CloudManagerOntology < Ontology::Base
 
     if obj.first == :running
       msg.content = handle_running_query(obj) ? obj : [:not, obj]
-    elsif obj.first == :active
-      msg.content = handle_active_query(obj) ? obj : [:not, obj]
     end
 
     msg
@@ -99,17 +98,17 @@ class CloudManagerOntology < Ontology::Base
     false
   end
 
-  # (running (guest ..))
+  # (running (vds ..))
   def handle_running_query(obj)
+    guest_id = nil
     obj.each do |param|
       next if !param.is_a?(Array)
-      if param.first.is_a?(Symbol) && param.first == :guest
+      if param.first.is_a?(Symbol) && param.first == :vds
         guest_id = param.second
-        return XenNode::is_guest_running?(guest_id)
       end
     end
 
-    false
+    @engine.match([:vds, guest_id, :running_on, :NODE]).empty? ? false : true
   end
 
   def handle_request(message)
