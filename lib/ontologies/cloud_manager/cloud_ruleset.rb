@@ -33,6 +33,7 @@ class CloudRuleset < RuleEngine::Base
       if matched_nodes.empty?
         Log4r::Logger['kb'].info "Starting VDS #{vds}"
         engine.assert [:vds, vds, :starting]
+        engine.retract [:vds, vds, :should_be_stopped] if engine.query [:vds, vds, :should_be_stopped]
         engine.ontology.start_vds(VpsConfiguration.find_by_uid(vds))
       end
     end
