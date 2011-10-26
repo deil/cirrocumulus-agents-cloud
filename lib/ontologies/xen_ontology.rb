@@ -57,15 +57,19 @@ class XenOntology < Ontology::Base
       
       known_guests.each do |guest|
         if !running_guests.include? guest
-          @engine.assert [:guest, guest, :just_powered_off] if !@engine.query([:guest, guest, :powered_off])
+          @engine.assert [:guest, guest, :just_powered_off] if @engine.query([:guest, guest, :powered_on])
+        else
+          @engine.assert [:guest, guest, :just_powered_on] if @engine.query([:guest, guest, :powered_off])
         end
       end
-      
+
+=begin
       running_guests.each do |guest|
         if !known_guests.include? guest
-          @engine.assert [:guest, guest, :just_powered_on] if !@engine.query([:guest, guest, :powered_on])
+          @engine.assert [:guest, guest, :just_powered_on] if @engine.query([:guest, guest, :powered_off])
         end
       end
+=end
     end
     
     if @tick_counter <= 0    
