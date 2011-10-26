@@ -82,20 +82,22 @@ class XenOntology < Ontology::Base
   def handle_message(message, kb)
     case message.act
       when 'inform' then
-        @engine.assert message.content
+        @engine.assert message.content if !@engine.query message.content
+
       when 'query-ref' then
         msg = query(message.content)
         msg.receiver = message.sender
         msg.ontology = self.name
         msg.in_reply_to = message.reply_with
         self.agent.send_message(msg)
-      when 'query-if'
+
+      when 'query-if' then
         msg = query_if(message.content)
         msg.receiver = message.sender
         msg.ontology = self.name
         msg.in_reply_to = message.reply_with
         self.agent.send_message(msg)
-      when 'request'
+      when 'request' then
         handle_request(message)
       else
         msg = Cirrocumulus::Message.new(nil, 'not-understood', [message.content, :not_supported])
