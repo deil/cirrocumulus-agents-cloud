@@ -57,7 +57,7 @@ class XenOntology < Ontology::Base
       
       known_guests.each do |guest|
         if !running_guests.include? guest
-          @engine.assert [:guest, guest, :just_powered_off] if @engine.query([:guest, guest, :powered_on])
+          @engine.assert [:guest, guest, :just_powered_off] if @engine.query([:guest, guest, :running])
         else
           @engine.assert [:guest, guest, :just_powered_on] if @engine.query([:guest, guest, :powered_off])
         end
