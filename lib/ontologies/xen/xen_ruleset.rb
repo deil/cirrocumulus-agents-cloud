@@ -10,7 +10,7 @@ class XenEngine < RuleEngine::Base
   rule 'initialize', [[:just_started]] do |engine, params|
     XenNode.connect()
     XenNode.set_cpu(0, 10000, 0)
-    msg = Cirrocumulus::Message.new(nil, 'inform', [:node, "%s-%s" % [`hostname`.strip, engine.ontology.name], XenNode.free_memory])
+    msg = Cirrocumulus::Message.new(nil, 'inform', [:node, "%s-%s" % [`hostname`.strip, engine.ontology.name.gsub('cirrocumulus-', '')], XenNode.free_memory])
     msg.ontology = 'cirrocumulus-cloud'
     engine.ontology.agent.send_message(msg)
     engine.retract [:just_started]
