@@ -4,11 +4,14 @@ require 'log4r'
 
 class StorageNode
   def self.free_space
-    `pvs --units g|grep mnekovg`.split("\n").first.split(" ")[5].to_f
+    `vgs --units m mnekovg`.split("\n")[1].split(" ")[6].to_i
   end
   
   def self.used_space
-    `pvs --units g|grep mnekovg`.split("\n").first.split(" ")[4].to_f - free_space
+    data = `vgs --units m mnekovg`.split("\n")[1].split(" ")
+    total = data[5].to_f
+    free = data[6].to_f
+    (total - free).to_i
   end
   
   def self.list_volumes()
@@ -30,7 +33,7 @@ class StorageNode
   end
 
   def self.volume_size(disk_number)
-    _, res = systemu("lvs mnekovg/vd%d" % [disk_number])
+    _, res = systemu("lvs --units k mnekovg/vd%d" % [disk_number])
     lines  = res.split("\n")
     return 0 if lines.size() < 2
 
@@ -46,7 +49,8 @@ class StorageNode
   end
 
   def self.create_volume(disk_number, size)
-    cmd = "lvcreate -L#{size}GiB -n vd#{disk_number} mnekovg"
+    new_size = size*1024*1024 + 1096 # align size for future RAID1 with 1.2 metadata
+    cmd = "lvcreate -L#{new_size}k -n vd#{disk_number} mnekovg"
     Log4r::Logger['os'].debug("command: " + cmd)
     _, res, err = systemu(cmd)
     Log4r::Logger['os'].debug("output: " + res)
