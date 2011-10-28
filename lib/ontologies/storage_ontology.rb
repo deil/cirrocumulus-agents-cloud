@@ -356,4 +356,4 @@ class StorageOntology < Ontology::Base
 
 end
 
-Log4r::Logger['agent'].info "storage backend = #{STORAGE_BACKEND}"
+Log4r::Logger['agent'].info "storage backend = #{STORAGE_CONFIG[:backend]}"
