@@ -1,8 +1,8 @@
-lib/config/jabber_config.rb
-lib/databases/*.sqlite
-*.sqlite
-Gemfile.lock
 .idea
 .bundle
+Gemfile.lock
+lib/config/jabber_config.rb
 lib/config/xen_config.rb
+lib/config/storage_config.rb
+lib/databases/*.sqlite
 lib/ontologies/cloud_manager/cloud_db-o1.rb

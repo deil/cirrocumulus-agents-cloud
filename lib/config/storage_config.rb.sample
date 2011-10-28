@@ -1,0 +1,5 @@
+STORAGE_CONFIG = {
+    :backend => :zfs
+    :volume_name => 'tank/vps',
+    :hostname_mask => /(\d+)$/
+}

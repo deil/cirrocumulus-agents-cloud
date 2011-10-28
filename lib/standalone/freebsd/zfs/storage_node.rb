@@ -1,11 +1,10 @@
-require 'rubygems'
 require 'systemu'
-require 'activesupport'
+require 'active_support'
 require 'log4r'
 
 class StorageNode
 
-  VOL_NAME = "tank/vps"
+  VOL_NAME = STORAGE_CONFIG[:volume_name]
 
   def self.free_space
     free_space_str = `zfs list #{VOL_NAME}`.split("\n").last.split(" ")[2]

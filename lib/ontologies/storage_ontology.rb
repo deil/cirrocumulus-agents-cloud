@@ -1,7 +1,6 @@
-require 'rubygems'
+require File.join(AGENT_ROOT, 'config/storage_config.rb')
 require File.join(AGENT_ROOT, 'ontologies/storage/storage_db.rb')
-require File.join(AGENT_ROOT, 'ontologies/storage/storage_config.rb')
-require "#{AGENT_ROOT}/standalone/#{Cirrocumulus::platform}/#{STORAGE_BACKEND}/storage_node.rb"
+require "#{AGENT_ROOT}/standalone/#{Cirrocumulus::platform}/#{STORAGE_CONFIG[:backend]}/storage_node.rb"
 
 class StorageOntology < Ontology::Base
   def initialize(agent)

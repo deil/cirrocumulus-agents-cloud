@@ -1,21 +1,24 @@
 require 'systemu'
-require 'activesupport'
+require 'active_support'
 require 'log4r'
 
 class StorageNode
+
+  VOL_NAME = STORAGE_CONFIG[:volume_name]
+
   def self.free_space
-    `vgs --units m mnekovg`.split("\n")[1].split(" ")[6].to_i
+    `vgs --units m #{VOL_NAME}`.split("\n")[1].split(" ")[6].to_i
   end
   
   def self.used_space
-    data = `vgs --units m mnekovg`.split("\n")[1].split(" ")
+    data = `vgs --units m #{VOL_NAME}`.split("\n")[1].split(" ")
     total = data[5].to_f
     free = data[6].to_f
     (total - free).to_i
   end
   
   def self.list_volumes()
-    _, res = systemu 'lvs | grep mnekovg'
+    _, res = systemu "lvs #{VOL_NAME}"
     lines = res.split("\n")
     lines.map {|line| line.split(' ').first}
   end
@@ -33,7 +36,7 @@ class StorageNode
   end
 
   def self.volume_size(disk_number)
-    _, res = systemu("lvs --units k mnekovg/vd%d" % [disk_number])
+    _, res = systemu("lvs --units k #{VOL_NAME}/vd%d" % [disk_number])
     lines  = res.split("\n")
     return 0 if lines.size() < 2
 
@@ -50,7 +53,7 @@ class StorageNode
 
   def self.create_volume(disk_number, size)
     new_size = size*1024*1024 + 1096 # align size for future RAID1 with 1.2 metadata
-    cmd = "lvcreate -L#{new_size}k -n vd#{disk_number} mnekovg"
+    cmd = "lvcreate -L#{new_size}k -n vd#{disk_number} #{VOL_NAME}"
     Log4r::Logger['os'].debug("command: " + cmd)
     _, res, err = systemu(cmd)
     Log4r::Logger['os'].debug("output: " + res)
@@ -61,7 +64,7 @@ class StorageNode
   end
 
   def self.delete_volume(disk_number)
-    cmd = "lvremove mnekovg/vd#{disk_number} --force"
+    cmd = "lvremove #{VOL_NAME}/vd#{disk_number} --force"
     Log4r::Logger['os'].debug("command: " + cmd)
     _, res, err = systemu(cmd)
     Log4r::Logger['os'].debug("output: " + res)
@@ -99,7 +102,7 @@ class StorageNode
     }.max || 0) + 1
 
     volume_name = "vd%s-%s-%.2d" % [disk_number, date, backup_number]
-    _, res, err = systemu "lvcreate -s -L#{size}g -n #{volume_name} mnekovg/vd#{disk_number}"
+    _, res, err = systemu "lvcreate -s -L#{size}g -n #{volume_name} #{VOL_NAME}/vd#{disk_number}"
     err.blank?
   end
   
@@ -121,7 +124,7 @@ class StorageNode
       result = lines
       
       result << "[#{name}]"
-      result << "path = /dev/mnekovg/#{name}"
+      result << "path = /dev/#{VOL_NAME}/#{name}"
       result << "shelf = " + disk_number.to_s
       result << "slot = " + slot.to_s
       result << ""
@@ -165,7 +168,7 @@ class StorageNode
   private
 
   def self.grow_volume(volume, size)
-    _, res, err = systemu "lvresize -L#{size}g mnekovg/#{volume}"
+    _, res, err = systemu "lvresize -L#{size}g #{VOL_NAME}/#{volume}"
     err.blank?
   end
 
