@@ -21,6 +21,42 @@ class String
   end
 end
 
+class Cirrocumulus
+  class Message
+    def self.parse_params(content, subroutine = false)
+      return parse_params(content.size == 1 ? content[0] : content, true)  if !subroutine
+
+      return [] if content.nil?
+      return content if !content.is_a?(Array)
+      return [] if content.size == 0
+      return {content[0] => []} if content.size == 1
+      return {content[0] => parse_params(content[1], true)} if content.size == 2
+
+      res = {content[0] => []}
+
+      if content.all? {|item| !item.is_a?(Array)}
+        content.each_with_index do |item,i|
+          if i == 0
+            res[content[0]] = []
+          else
+            res[content[0]] << item
+          end
+        end
+      else
+        content.each_with_index do |item,i|
+          if i == 0
+            res[content[0]] = {}
+          else
+            res[content[0]].merge!(parse_params(item, true))
+          end
+        end
+      end
+
+      res
+    end
+  end
+end
+
 ontologies_file_name = nil
 
 ARGV.each_with_index do |arg, i|

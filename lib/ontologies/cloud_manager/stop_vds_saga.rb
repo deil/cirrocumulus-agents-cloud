@@ -1,4 +1,3 @@
-require 'cirrocumulus/saga'
 require File.join(AGENT_ROOT, 'standalone/mac.rb')
 
 class StopVdsSaga < Saga
@@ -15,8 +14,8 @@ class StopVdsSaga < Saga
     @vds = vds
     @message = message
     
-    #Log4r::Logger['agent'].info "[#{id}] Starting VDS #{vds.uid} (#{vds.id}) with RAM=#{vds.current.ram}Mb"
-    @ontology.engine.assert [:vds, vds.uid, :stopping] if !@ontology.engine.query([:vds, vds.uid, :stopping])
+    Log4r::Logger['agent'].info "[#{id}] Stopping VDS #{vds.uid} (#{vds.id})"
+    @ontology.engine.replace [:vds, vds.uid, :actual_state, :RUNNING], :stopping
     handle()
   end
   
@@ -29,6 +28,9 @@ class StopVdsSaga < Saga
           change_state(STATE_STOPPING_GUEST)
           set_timeout(1)
         else
+          failure(:not_enough_knowledge)
+          error()
+
           msg = Cirrocumulus::Message.new(nil, 'query-if', [:running, [:guest, vds.uid]])
           msg.ontology = 'cirrocumulus-xen'
           msg.reply_with = @id
@@ -66,8 +68,8 @@ class StopVdsSaga < Saga
       when STATE_WAITING_FOR_POWEROFF
         if message
           if message.act == 'inform' && message.content.last[0] == :finished
-            @ontology.engine.retract [:vds, vds.uid, :running_on, @target_node]
-            @ontology.engine.retract [:vds, vds.uid, :stopping]
+            @ontology.engine.replace [:vds, vds.uid, :actual_state, :CURRENT_STATE], :stopped
+            Log4r::Logger['agent'].info "[#{id}] Xen VDS #{vds.uid} (#{vds.id}) has been successfully stopped"
             finish()
           else
             notify_failure(:unhandled_reply)

@@ -1,4 +1,3 @@
-require 'cirrocumulus/saga'
 require File.join(AGENT_ROOT, 'standalone/mac.rb')
 
 class StartVdsSaga < Saga
@@ -16,7 +15,7 @@ class StartVdsSaga < Saga
     @message = message
     
     Log4r::Logger['agent'].info "[#{id}] Starting VDS #{vds.uid} (#{vds.id}) with RAM=#{vds.current.ram}Mb"
-    @ontology.engine.assert [:vds, vds.uid, :starting] if !@ontology.engine.query([:vds, vds.uid, :starting])
+    @ontology.engine.replace [:vds, vds.uid, :actual_state, :STOPPED], :starting
     handle()
   end
   
@@ -27,8 +26,8 @@ class StartVdsSaga < Saga
         msg.ontology = 'cirrocumulus-xen'
         msg.reply_with = @id
         @ontology.agent.send_message(msg)
-        change_state(STATE_SEARCHING_FOR_GUEST)
-        set_timeout(LONG_TIMEOUT)
+        change_state(STATE_SEARCHING_FOR_GUEST) # TODO: actually, we do not need this
+        set_timeout(DEFAULT_TIMEOUT)
         
       when STATE_SEARCHING_FOR_GUEST
         if message.nil?
@@ -43,7 +42,7 @@ class StartVdsSaga < Saga
           reply = message.content.first
           if reply == :running
             clear_timeout()
-            Log4r::Logger['agent'].info "[#{id}] VDS #{vds.uid} is already running on #{message.sender}"
+            Log4r::Logger['agent'].warn "[#{id}] VDS #{vds.uid} is already running on #{message.sender}"
             @ontology.engine.assert [:vds, vds.uid, :running_on, message.sender]
             @ontology.engine.retract [:vds, vds.uid, :starting]
             notify_refused(:already_running)
@@ -165,9 +164,10 @@ class StartVdsSaga < Saga
         if message
           if message.act == 'inform' && message.content.last[0] == :finished
             @ontology.engine.retract [:guest, vds.uid, :powered_off], true
-            @ontology.engine.retract [:vds, vds.uid, :starting], true
+            @ontology.engine.replace [:vds, vds.uid, :actual_state, :CURRENT_STATE], :running
             @ontology.engine.assert [:vds, vds.uid, :running_on, message.sender]
             @selected_host[:failed] = false
+            Log4r::Logger['agent'].info "[#{id}] Xen VDS #{vds.uid} (#{vds.id}) has been successfully started on #{message.sender}"
             finish()
           else
             @selected_host[:failed] = true

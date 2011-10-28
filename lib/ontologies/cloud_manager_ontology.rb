@@ -1,8 +1,10 @@
 require 'cirrocumulus/saga'
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_db-o1.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_ruleset.rb')
+require File.join(AGENT_ROOT, 'ontologies/cloud_manager/create_xen_vds_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/start_vds_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/stop_vds_saga.rb')
+require File.join(AGENT_ROOT, 'ontologies/cloud_manager/query_xen_vds_state_saga.rb')
 
 class CloudManagerOntology < Ontology::Base
   attr_reader :engine
@@ -13,9 +15,19 @@ class CloudManagerOntology < Ontology::Base
   end
 
   def restore_state()
-    VpsConfiguration.running.each do |vds|
-      @engine.assert [:vds, vds.uid, :should_be_running]
+    @engine.assert [:just_started] # TODO: need to assert any fact to initialize KB
+
+    VpsConfiguration.active.each do |vds|
+      @engine.assert [:vds, vds.uid, :state, :stopped]
+      @engine.assert [:vds, vds.uid, :actual_state, :unknown]
     end
+
+    VpsConfiguration.running.each do |vds|
+      @engine.replace [:vds, vds.uid, :state, :CURRENT_STATE], :running
+      #@engine.assert [:vds, vds.uid, :should_be_running] # TODO: deprecated, remove
+    end
+
+    @engine.retract [:just_started]
   end
   
   def handle_tick()
@@ -27,7 +39,7 @@ class CloudManagerOntology < Ontology::Base
         @engine.assert message.content if !@engine.query message.content
 
       when 'query-ref' then
-        msg = query(message.content)
+        msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [query_ref(message.content)]])
         msg.receiver = message.sender
         msg.ontology = self.name
         msg.in_reply_to = message.reply_with
@@ -50,30 +62,46 @@ class CloudManagerOntology < Ontology::Base
         self.agent.send_message(msg)
     end
   end
+
+  def query_xen_vds_state(vds)
+    saga = create_saga(QueryXenVdsStateSaga)
+    saga.start(vds, nil)
+  end
   
-  def start_vds(vds)
+  def start_xen_vds(vds)
     saga = create_saga(StartVdsSaga)
     saga.start(vds, nil)
   end
   
-  def stop_vds(vds)
+  def stop_xen_vds(vds)
     create_saga(StopVdsSaga).start(vds, nil)
   end
 
   private
 
-  def query(obj)
-    msg = Cirrocumulus::Message.new(nil, 'inform', nil)
+  def query_ref(content)
+    result = []
+    params = Cirrocumulus::Message.parse_params(content)
+    query = params.keys.first
 
-    if obj.first == :free_memory
-      msg.content = [:'=', obj, [XenNode.free_memory]]
-    elsif obj.first == :used_memory
-      msg.content = [:'=', obj, [XenNode.total_memory - XenNode.free_memory]]
-    elsif obj.first == :guests_count
-      msg.content = [:'=', obj, [XenNode.list_running_guests().size]]
+    if query == :state
+      object = params[query]
+      p object
+
+      if object.include? :vds
+        vds_uid = object[:vds][:uid]
+        matched_data = @engine.match [:vds, vds_uid, :actual_state, :STATE]
+        if matched_data.empty?
+          result = :vds_not_found
+        else
+          vds_state = matched_data.first
+          result = vds_state[:STATE]
+        end
+      end
     end
 
-    msg
+    p result
+    result
   end
 
   def query_if(obj)
@@ -86,24 +114,6 @@ class CloudManagerOntology < Ontology::Base
     msg
   end
   
-  # (active (disk (disk_number ..)))
-  def handle_active_query(obj)
-    obj.each do |p|
-      next if !p.is_a?(Array)
-      if p.first == :disk
-        disk_number = nil
-        param = p.second
-        if param.is_a?(Array) && param.first == :disk_number
-          disk_number = param.second.to_i
-        end
-        
-        return Mdraid.get_status(disk_number) == :active
-      end
-    end
-    
-    false
-  end
-
   # (running (vds ..))
   def handle_running_query(obj)
     guest_id = nil
@@ -118,89 +128,17 @@ class CloudManagerOntology < Ontology::Base
   end
 
   def handle_request(message)
-    action = message.content.first
+    params = Cirrocumulus::Message.parse_params(message.content)
+    action = params.keys.first
 
-    if action == :stop
-      handle_stop_request(message.content.second, message)
-    elsif action == :reboot
-      handle_reboot_request(message.content.second, message)
-    elsif action == :start
-      handle_start_request(message.content.second, message)
+    if action == :reboot
+      handle_reboot_request(params[action], message)
     elsif action == :create
-      handle_create_request(message.content.second, message)
+      handle_create_request(params[action], message)
     end
   end
 
-  # (stop (guest (id ..)))
-  def handle_stop_request(obj, message)
-    if obj.first == :guest
-      guest_id = nil
-      obj.each do |param|
-        if param.is_a?(Array) && param.first == :id
-          guest_id = param.second
-        end
-      end
-
-      if XenNode.is_guest_running?(guest_id)
-        if XenNode.stop_guest(guest_id)
-          config = DomUConfig.find_by_name(guest_id)
-          config.delete() if config
-
-          msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
-          msg.ontology = self.name
-          msg.receiver = message.sender
-          msg.in_reply_to = message.reply_with
-          self.agent.send_message(msg)
-        else
-          msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
-          msg.ontology = self.name
-          msg.receiver = message.sender
-          msg.in_reply_to = message.reply_with
-          self.agent.send_message(msg)
-        end
-      else
-        msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:guest_not_found]])
-        msg.ontology = self.name
-        msg.receiver = message.sender
-        msg.in_reply_to = message.reply_with
-        self.agent.send_message(msg)
-      end
-    elsif obj.first == :disk
-      disk_number = nil
-      obj.each do |param|
-        if param.is_a?(Array) && param.first == :disk_number
-          disk_number = param.second.to_i
-        end
-      end
-
-      disk = VirtualDisk.find_by_disk_number(disk_number)
-      if disk
-        if Mdraid.stop(disk_number)
-          disk.delete()
-
-          msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
-          msg.ontology = self.name
-          msg.receiver = message.sender
-          msg.in_reply_to = message.reply_with
-          self.agent.send_message(msg)
-        else
-          msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
-          msg.ontology = self.name
-          msg.receiver = message.sender
-          msg.in_reply_to = message.reply_with
-          self.agent.send_message(msg)
-        end
-      else
-        msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:disk_not_found]])
-        msg.ontology = self.name
-        msg.receiver = message.sender
-        msg.in_reply_to = message.reply_with
-        self.agent.send_message(msg)
-      end
-    end
-  end
-
-  # (reboot (guest (id ..)))
+  # (reboot (vds (uid ...)))
   def handle_reboot_request(obj, message)
     if obj.first == :guest
       guest_id = nil
@@ -234,153 +172,21 @@ class CloudManagerOntology < Ontology::Base
     end
   end
 
-  # (start (guest (id ..) (ram ..)))
-  def handle_start_request(obj, message)
-    if obj.first == :guest
-      guest_cfg = {:is_hvm => 0, :vcpus => 1, :cpu_cap => 0, :cpu_weight => 128, :eth => [], :disks => [], :network_boot => 0}
-      guest_id = nil
+  # (create (vds (ram ..)))
+  def handle_create_request(obj, original_message)
+    p obj
 
-      obj.each do |param|
-        next if !param.is_a?(Array)
-        case param.first
-          when :id
-            guest_id = param.second
-          when :hvm
-            guest_cfg[:is_hvm] = param.second.to_i
-          when :ram
-            guest_cfg[:ram] = param.second.to_i
-          when :vcpus
-            guest_cfg[:vcpus] = param.second.to_i
-          when :weight
-            guest_cfg[:cpu_weight] = param.second.to_i
-          when :cap
-            guest_cfg[:cpu_cap] = param.second.to_i
-          when :vnc
-            guest_cfg[:vnc_port] = param.second.to_i
-          when :eth
-            param.each_with_index do |eth, i|
-              next if i == 0 # :eth
-              guest_cfg[:eth] << eth
-            end
-          when :disks
-            param.each do |disk|
-              next if !disk.is_a?(Array)
-              guest_cfg[:disks] << disk
-            end
-          when :network_boot
-            guest_cfg[:network_boot] = param.second.to_i
-        end
-      end
-
-      #p guest_id
-      #p guest_cfg
-
-      guest = DomU.new(guest_id, guest_cfg[:is_hvm] == 1 ? :hvm : :pv, guest_cfg[:ram])
-      guest.vcpus = guest_cfg[:vcpus]
-      guest.disks = guest_cfg[:disks]
-      guest.cpu_weight = guest_cfg[:cpu_weight]
-      guest.cpu_cap = guest_cfg[:cpu_cap]
-      guest.eth0_mac = guest_cfg[:eth].first if guest_cfg[:eth].size > 0
-      guest.eth1_mac = guest_cfg[:eth].second if guest_cfg[:eth].size > 1
-      guest.network_boot = guest_cfg[:network_boot]
-      guest.vnc_port = guest_cfg[:vnc_port] if guest_cfg[:vnc_port]
-
-      saga = create_saga(StartGuestSaga)
-      saga.start(guest, message)
-    elsif obj.first == :disk
-      disk_number = nil
-      obj.each do |param|
-        if param.is_a?(Array) && param.first == :disk_number
-          disk_number = param.second.to_i
-        end
-      end
-
-      if Mdraid.get_status(disk_number) == :stopped
-        disk = VirtualDisk.find_by_disk_number(disk_number)
-        if disk
-          logger.warn("locally stored config for virtual disk '#{disk_number}' already exists! deleted")
-          disk.delete()
-        end
-
-        if Mdraid.check_aoe(disk_number).size == 0
-          msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:no_visible_exports]])
-          msg.ontology = self.name
-          msg.receiver = message.sender
-          msg.in_reply_to = message.reply_with
-          self.agent.send_message(msg)
-        else
-          if Mdraid.assemble(disk_number)
-            disk = VirtualDisk.new(disk_number)
-            disk.save('cirrocumulus', message.sender)
-
-            msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
-            msg.ontology = self.name
-            msg.receiver = message.sender
-            msg.in_reply_to = message.reply_with
-            self.agent.send_message(msg)
-          else
-            msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
-            msg.ontology = self.name
-            msg.receiver = message.sender
-            msg.in_reply_to = message.reply_with
-            self.agent.send_message(msg)
-          end
-        end
+    if obj.include? :vds
+      vds_config = obj[:vds]
+      if vds_config[:type] == :xen
+        saga = create_saga(CreateXenVdsSaga)
+        saga.start(vds_config, original_message)
       else
-        msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:already_exists]])
+        context = original_message.context()
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [original_message.content, [:not_supported_vds_type]])
         msg.ontology = self.name
-        msg.receiver = message.sender
-        msg.in_reply_to = message.reply_with
-        self.agent.send_message(msg)
-      end
-    end
-  end
-
-  def handle_create_request(obj, message)
-    if obj.first == :disk
-      disk_number = nil
-      obj.each do |param|
-        if param.is_a?(Array) && param.first == :disk_number
-          disk_number = param.second.to_i
-        end
-      end
-
-      if Mdraid.get_status(disk_number) == :stopped
-        disk = VirtualDisk.find_by_disk_number(disk_number)
-        if disk
-          logger.warn("locally stored config for virtual disk '#{disk_number}' already exists! deleted")
-          disk.delete()
-        end
-
-        if Mdraid.check_aoe(disk_number).size == 0
-          msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:no_visible_exports]])
-          msg.ontology = self.name
-          msg.receiver = message.sender
-          msg.in_reply_to = message.reply_with
-          self.agent.send_message(msg)
-        else
-          if Mdraid.create(disk_number)
-            disk = VirtualDisk.new(disk_number)
-            disk.save('cirrocumulus', message.sender)
-
-            msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
-            msg.ontology = self.name
-            msg.receiver = message.sender
-            msg.in_reply_to = message.reply_with
-            self.agent.send_message(msg)
-          else
-            msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
-            msg.ontology = self.name
-            msg.receiver = message.sender
-            msg.in_reply_to = message.reply_with
-            self.agent.send_message(msg)
-          end
-        end
-      else
-        msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:already_exists]])
-        msg.ontology = self.name
-        msg.receiver = message.sender
-        msg.in_reply_to = message.reply_with
+        msg.receiver = context.sender
+        msg.in_reply_to = context.reply_with
         self.agent.send_message(msg)
       end
     end
