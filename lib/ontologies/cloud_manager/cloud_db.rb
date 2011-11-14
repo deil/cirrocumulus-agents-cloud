@@ -1,5 +1,6 @@
 require 'active_support'
 require 'active_record'
+require 'guid'
 
 class KnownFact < ActiveRecord::Base
   named_scope :current, :conditions => {:is_active => 1}
@@ -18,6 +19,8 @@ class VpsConfiguration
     @vds_type = vds_type
     @uid = uid
     @current = VdsConfigurationHistory.new(ram)
+    disks = []
+    hvm = 0
   end
 
   def hvm?
@@ -55,7 +58,23 @@ class VpsConfiguration
     json = ActiveSupport::JSON.decode(fact.value)
     vds = VpsConfiguration.new(json['id'], json['vds_type'], json['uid'], json['current']['ram'])
     vds.hvm = json['hvm']
-    vds.disks = json['disks'].map {|disk| VdsDisk.new(vds, disk['disk_number'], disk['priority'])} if json['disks']
+    vds.disks = json['disks'].map {|disk|
+      d = VdsDisk.find_by_number(disk['disk_number'])
+      d.priority = disk['priority']
+      d.vds = vds
+      d
+    } if json['disks']
+
+    vds
+  end
+  
+  def self.create_vds(ram)
+    last_id = 0
+    all.each {|vds| last_id = vds.id if vds.id > last_id}
+    last_id += 1
+    uid = Guid.new.to_s.gsub('-', '')
+    vds = VpsConfiguration.new(last_id, "xen", uid, ram)
+    vds.save()
     vds
   end
 
@@ -67,7 +86,7 @@ class VpsConfiguration
     disks.each {|disk| disk.vds = self}
     fact.origin = origin
     fact.agent = agent
-    fact.save
+    fact.save()
   end
 
   def delete
@@ -85,18 +104,66 @@ class VdsConfigurationHistory
 end
 
 class VdsDisk
-  attr_accessor :disk_number
+  attr_accessor :number
   attr_accessor :priority
   attr_accessor :vds
+  attr_accessor :size
 
-  def initialize(vds, disk_number, priority)
+  def initialize(vds, disk_number, priority, size = nil)
     @vds = vds
-    self.disk_number = disk_number
+    self.number = disk_number
     self.priority = priority
+    self.size = size
   end
 
   def block_device
     (@vds.hvm? ? "hd" : "xvd") + ("a".ord + priority).chr
+  end
+
+  def save(origin = nil, agent = nil)
+    fact = KnownFact.current.find_by_key('vdisk_' + number.to_s)
+    fact = KnownFact.new(:key => 'vdisk_' + number.to_s, :is_active => true) unless fact
+    _vds = self.vds
+    self.vds = nil
+    fact.value = self.to_json
+    self.vds = _vds
+    fact.origin = origin
+    fact.agent = agent
+    fact.save()
+  end
+
+  def delete()
+    fact = KnownFact.current.find_by_key('vdisk_' + number.to_s)
+    fact.update_attributes(:is_active => false) if fact
+  end
+  
+  def self.all
+    disks = []
+    KnownFact.all(:conditions => ['key like "vdisk_%%"']).each do |f|
+      if f.key =~ /vdisk_(\d+)$/
+        disk_number = $1.to_i
+        disks << self.find_by_number(disk_number)
+      end
+    end
+
+    disks
+  end
+  
+  def self.find_by_number(disk_number)
+    fact = KnownFact.current.find_by_key('vdisk_' + disk_number.to_s)
+    return nil unless fact
+
+    json = ActiveSupport::JSON.decode(fact.value)
+    disk = VdsDisk.new(nil, disk_number, json['priority'], json['size'])
+    disk
+  end
+  
+  def self.create(size)
+    last_number = 0
+    all.each {|disk| last_number = disk.number if disk.number > last_number }
+    d = self.new(nil, last_number + 1, 0, size)
+    d.save()
+    d
   end
 end
 

@@ -83,4 +83,32 @@ class CloudRuleset < RuleEngine::Base
       Log4r::Logger['kb'].warn "Externally started VDS #{vds}"
     end
   end
+
+  #
+  # Need to build new VDS
+  #
+  rule 'build_new_vds', [ [:vds, :VDS, :state, :maintenance], [:vds, :VDS, :actual_state, :building] ] do |engine, params|
+    vds_uid = params[:VDS]
+
+    vds = VpsConfiguration.find_by_uid(vds_uid)
+    all_disks_clean = true
+    vds.disks.each do |disk|
+      all_disks_clean &&= engine.query [:virtual_disk, disk.number, :actual_state, :clean]
+    end
+
+    if all_disks_clean
+      Log4r::Logger['kb'].info "Building VDS #{vds_uid}"
+      engine.replace [:vds, vds_uid, :actual_state, :CURRENT_STATE], :stopped
+    end
+  end
+
+  #
+  # Need to build Virtual Disk
+  #
+  rule 'build_virtual_disk', [ [:virtual_disk, :NUMBER, :actual_state, :created] ] do |engine, params|
+    disk_number = params[:NUMBER]
+    Log4r::Logger['kb'].info "Building Virtual Disk #{disk_number}"
+    disk = VdsDisk.find_by_number(disk_number)
+    engine.ontology.build_disk(disk)
+  end
 end
