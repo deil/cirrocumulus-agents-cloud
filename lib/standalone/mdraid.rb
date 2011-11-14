@@ -19,13 +19,24 @@ class Mdraid
   end
 
   def self.get_status(disk_number)
-    #cmd = "cat /proc/mdstat | grep md#{disk_number}"
     cmd = "mdadm --detail /dev/md#{disk_number}"
     Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
     return :stopped unless err.blank?
-    return :failed if out.include? 'degraded'
-    :active
+    return :active if out.include? 'clean'
+    :failed
+  end
+
+  def self.degraded?(disk_number)
+    cmd = "mdadm --detail /dev/md#{disk_number}"
+    _, out, err = systemu(cmd)
+    return out.include?('degraded') ? true : false
+  end
+
+  def self.recovering?(disk_number)
+    cmd = "mdadm --detail /dev/md#{disk_number}"
+    _, out, err = systemu(cmd)
+    return out.include?('recovering') ? true : false
   end
   
   def self.create(disk_number)
