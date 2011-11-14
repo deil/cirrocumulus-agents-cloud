@@ -36,7 +36,7 @@ class Mdraid
   def self.recovering?(disk_number)
     cmd = "mdadm --detail /dev/md#{disk_number}"
     _, out, err = systemu(cmd)
-    return out.include?('recovering') ? true : false
+    return out.include?('recovering') || out.include?('resyncing') ? true : false
   end
   
   def self.create(disk_number)
