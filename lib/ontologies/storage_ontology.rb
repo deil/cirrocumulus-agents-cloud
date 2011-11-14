@@ -78,7 +78,7 @@ class StorageOntology < Ontology::Base
 
   def storage_number
     hostname = `hostname`
-    if hostname =~ STORAGE_HOSTNAME_MASK
+    if hostname =~ STORAGE_CONFIG[:hostname_mask]
       return $1.to_i
     end
 
