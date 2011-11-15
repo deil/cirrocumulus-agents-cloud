@@ -72,6 +72,7 @@ class BuildVirtualDiskSaga < Saga
 
       when STATE_CREATING_DISK
         if message.nil?
+          Log4r::Logger['agent'].info "[#{id}] Virtual disk #{disk.number} was built successfully"
           error()
         else
           if message.sender == @selected_host[:agent] && message.act == 'inform' && message.content.last[0] == :finished
