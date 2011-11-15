@@ -4,17 +4,35 @@
       <pattern>=>[%5l %d] %C: %M</pattern>
     </formatter>
   </outputter>
+  <outputter name='file' type='FileOutputter' level='DEBUG'>
+    <filename>cirrocumulus_debug.log</filename>
+    <formatter type='Log4r::PatternFormatter'>
+      <pattern>=>[%5l %d] %C: %M</pattern>
+    </formatter>
+  </outputter>
+  <outputter name='decisions_file' type='FileOutputter' level='INFO'>
+    <filename>cirrocumulus.log</filename>
+    <formatter type='Log4r::PatternFormatter'>
+      <pattern>=>[%5l %d] %C: %M</pattern>
+    </formatter>
+  </outputter>
 
   <logger name="os" level="ALL" additive="false" trace="true">
     <outputter>console</outputter>
+    <outputter>file</outputter>
   </logger>
   <logger name="agent" level="ALL" additive="false" trace="true">
 	  <outputter>console</outputter>
+    <outputter>decisions_file</outputter>
+    <outputter>file</outputter>
   </logger>
   <logger name="cirrocumulus" level="INFO" additive="false" trace="true">
 	  <outputter>console</outputter>
+    <outputter>decisions_file</outputter>
+    <outputter>file</outputter>
   </logger>
   <logger name="kb" level="INFO" additive="false" trace="true">
 	  <outputter>console</outputter>
+    <outputter>file</outputter>
   </logger>
 </log4r_config>
