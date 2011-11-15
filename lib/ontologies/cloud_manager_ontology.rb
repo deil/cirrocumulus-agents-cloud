@@ -1,6 +1,8 @@
 require 'cirrocumulus/saga'
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_db-o1.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_ruleset.rb')
+require File.join(AGENT_ROOT, 'ontologies/cloud_manager/build_virtual_disk_saga.rb')
+require File.join(AGENT_ROOT, 'ontologies/cloud_manager/build_xen_vds_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/create_xen_vds_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/start_vds_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/stop_vds_saga.rb')
@@ -75,6 +77,14 @@ class CloudManagerOntology < Ontology::Base
   
   def stop_xen_vds(vds)
     create_saga(StopVdsSaga).start(vds, nil)
+  end
+
+  def build_xen_vds(vds)
+    create_saga(BuildXenVdsSaga).start(vds)
+  end
+
+  def build_disk(disk)
+    create_saga(BuildVirtualDiskSaga).start(disk)
   end
 
   private

@@ -42,7 +42,7 @@ class CreateXenVdsSaga < Saga
         change_state(STATE_NOTIFY)
 
       when STATE_NOTIFY
-        @ontology.engine.replace [:vds, @vds.uid, :actual_state, :CURRENT_STATE], :building
+        @ontology.engine.replace [:vds, @vds.uid, :actual_state, :CURRENT_STATE], :created
         notify_finished()
         finish()
     end

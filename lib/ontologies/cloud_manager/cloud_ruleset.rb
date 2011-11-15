@@ -18,7 +18,7 @@ class CloudRuleset < RuleEngine::Base
     if vds.vds_type == "xen"
       engine.ontology.query_xen_vds_state(vds)
     else
-      Log4r::Logger['kb'].warn "VDS #{vds_uid} type is not supported"
+      Log4r::Logger['cirrocumulus'].warn "VDS #{vds_uid} type is not supported"
     end
   end
 
@@ -31,7 +31,7 @@ class CloudRuleset < RuleEngine::Base
     matched_nodes = engine.match [:vds, vds, :running_on, :NODE]
     matched_nodes.each {|match| engine.retract [:vds, vds, :running_on, match[:NODE]]}
 
-    Log4r::Logger['kb'].info "Xen VDS #{vds} is powered off, but should be running"
+    Log4r::Logger['cirrocumulus'].info "Xen VDS #{vds} is powered off, but should be running"
     engine.ontology.start_xen_vds(VpsConfiguration.find_by_uid(vds))
   end
 
@@ -45,11 +45,11 @@ class CloudRuleset < RuleEngine::Base
 
     matched_nodes = engine.match [:vds, vds, :running_on, :NODE]
     if matched_nodes.size > 1
-      Log4r::Logger['kb'].warn "WTF!? Xen VDS #{vds} is running on multiple nodes"
+      Log4r::Logger['cirrocumulus'].warn "WTF!? Xen VDS #{vds} is running on multiple nodes"
     end
 
     matched_nodes.each do |match|
-      Log4r::Logger['kb'].warn "Xen VDS #{vds} terminated on #{match[:NODE]}"
+      Log4r::Logger['cirrocumulus'].warn "Xen VDS #{vds} terminated on #{match[:NODE]}"
       engine.retract [:vds, vds, :running_on, match[:NODE]], true
     end
 
@@ -63,31 +63,34 @@ class CloudRuleset < RuleEngine::Base
   rule 'vds_should_be_stopped', [ [:vds, :VDS, :actual_state, :running], [:vds, :VDS, :state, :stopped] ] do |engine, params|
     vds = params[:VDS]
 
-    Log4r::Logger['kb'].info "Xen VDS #{vds} is powered on, but should be stopped"
+    Log4r::Logger['cirrocumulus'].info "Xen VDS #{vds} is powered on, but should be stopped"
 
     matched_nodes = engine.match [:vds, vds, :running_on, :NODE]
     if matched_nodes.size > 1
-      Log4r::Logger['kb'].warn "WTF!? Xen VDS #{vds} is running on multiple nodes"
+      Log4r::Logger['cirrocumulus'].warn "WTF!? Xen VDS #{vds} is running on multiple nodes"
     end
 
     matched_nodes.each do |match|
-      Log4r::Logger['kb'].info "Xen VDS #{vds} is currently running on #{match[:NODE]}"
+      Log4r::Logger['cirrocumulus'].info "Xen VDS #{vds} is currently running on #{match[:NODE]}"
     end
 
     engine.ontology.stop_xen_vds(VpsConfiguration.find_by_uid(vds))
   end
-  
+
+  #
+  # VDS should be stopped, but somebody informed that it is running. Heh
+  #
   rule 'vds_should_be_stopped_but_started_externally', [[:guest, :VDS, :powered_on], [:vds, :VDS, :should_be_stopped]] do |engine, params|
     vds = params[:VDS]
     if engine.match([:vds, vds, :running_on, :NODE]).empty?
-      Log4r::Logger['kb'].warn "Externally started VDS #{vds}"
+      Log4r::Logger['cirrocumulus'].warn "Externally started VDS #{vds}"
     end
   end
 
   #
-  # Need to build new VDS
+  # Need to build new VDS. Firstly, we wait until all attached disks are ready.
   #
-  rule 'build_new_vds', [ [:vds, :VDS, :state, :maintenance], [:vds, :VDS, :actual_state, :building] ] do |engine, params|
+  rule 'build_vds', [ [:vds, :VDS, :state, :maintenance], [:vds, :VDS, :actual_state, :created] ] do |engine, params|
     vds_uid = params[:VDS]
 
     vds = VpsConfiguration.find_by_uid(vds_uid)
@@ -97,8 +100,8 @@ class CloudRuleset < RuleEngine::Base
     end
 
     if all_disks_clean
-      Log4r::Logger['kb'].info "Building VDS #{vds_uid}"
-      engine.replace [:vds, vds_uid, :actual_state, :CURRENT_STATE], :stopped
+      Log4r::Logger['cirrocumulus'].info "Building VDS #{vds_uid}"
+      engine.ontology.build_vds(vds)
     end
   end
 
@@ -107,7 +110,7 @@ class CloudRuleset < RuleEngine::Base
   #
   rule 'build_virtual_disk', [ [:virtual_disk, :NUMBER, :actual_state, :created] ] do |engine, params|
     disk_number = params[:NUMBER]
-    Log4r::Logger['kb'].info "Building Virtual Disk #{disk_number}"
+    Log4r::Logger['cirrocumulus'].info "Building Virtual Disk #{disk_number}"
     disk = VdsDisk.find_by_number(disk_number)
     engine.ontology.build_disk(disk)
   end

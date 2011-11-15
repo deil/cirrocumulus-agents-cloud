@@ -62,7 +62,7 @@ class StartVdsSaga < Saga
           Log4r::Logger['agent'].info "[#{id}] Will try #{@selected_host[:agent]} (#{@selected_host[:free_memory]}Mb RAM available, #{vds.current.ram}Mb needed)"
           @virtual_disk_states = vds.disks.map {|disk| {:disk => disk, :active => false}}
           vds.disks.each do |disk|
-            msg = Cirrocumulus::Message.new(nil, 'query-if', [:active, [:disk, [:disk_number, disk.disk_number]]])
+            msg = Cirrocumulus::Message.new(nil, 'query-if', [:active, [:disk, [:disk_number, disk.number]]])
             msg.receiver = @selected_host[:agent]
             msg.ontology = 'cirrocumulus-xen'
             msg.reply_with = id

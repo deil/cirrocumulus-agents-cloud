@@ -1,3 +1,11 @@
-class BuildXenVdsSaga
-  # To change this template use File | Settings | File Templates.
+class BuildXenVdsSaga < Saga
+  attr_reader :vds
+
+  def start(vds)
+    @vds = vds
+  end
+
+  def handle(message = nil)
+
+  end
 end
