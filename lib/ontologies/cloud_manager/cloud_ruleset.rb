@@ -101,7 +101,7 @@ class CloudRuleset < RuleEngine::Base
 
     if all_disks_clean
       Log4r::Logger['cirrocumulus'].info "Building VDS #{vds_uid}"
-      engine.ontology.build_vds(vds)
+      engine.ontology.build_xen_vds(vds)
     end
   end
 
