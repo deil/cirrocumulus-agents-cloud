@@ -1,5 +1,5 @@
 require 'cirrocumulus/saga'
-require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_db-o1.rb')
+require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_db.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_ruleset.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/build_virtual_disk_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/build_xen_vds_saga.rb')
