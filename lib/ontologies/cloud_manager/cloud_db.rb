@@ -75,6 +75,7 @@ class VpsConfiguration
     json = ActiveSupport::JSON.decode(fact.value)
     vds = VpsConfiguration.new(json['id'], json['vds_type'], json['uid'], json['current']['ram'])
     vds.hvm = json['hvm']
+    vds.is_running = json['is_running']
     vds.disks = json['disks'].map {|disk|
       d = VdsDisk.find_by_number(disk['disk_number'])
       d.priority = disk['priority']
@@ -91,7 +92,7 @@ class VpsConfiguration
     last_id += 1
     uid = Guid.new.to_s.gsub('-', '')
     vds = VpsConfiguration.new(last_id, "xen", uid, ram)
-    vds.save()
+    vds.start()
     vds
   end
 
@@ -106,7 +107,7 @@ class VpsConfiguration
     fact.save()
   end
 
-  def delete
+  def delete()
     fact = KnownFact.current.find_by_key('vds_' + uid)
     fact.update_attributes(:is_active => false) if fact
   end
