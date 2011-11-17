@@ -20,8 +20,8 @@ class VpsConfiguration
     @vds_type = vds_type
     @uid = uid
     @current = VdsConfigurationHistory.new(ram)
-    disks = []
-    hvm = 0
+    @disks = []
+    @hvm = 0
   end
 
   def hvm?
@@ -40,6 +40,15 @@ class VpsConfiguration
   def stop(origin = nil, agent = nil)
     is_running = false
     save(origin, agent)
+  end
+
+  def attach_disk(disk)
+    prio = disks.size
+    disks << disk
+    disk.vds = self
+    disk.priority = disks.size
+    disk.save()
+    save()
   end
 
   def self.active
@@ -77,7 +86,7 @@ class VpsConfiguration
     vds.hvm = json['hvm']
     vds.is_running = json['is_running']
     vds.disks = json['disks'].map {|disk|
-      d = VdsDisk.find_by_number(disk['disk_number'])
+      d = VdsDisk.find_by_number(disk['number'])
       d.priority = disk['priority']
       d.vds = vds
       d
@@ -88,7 +97,7 @@ class VpsConfiguration
   
   def self.create_vds(ram)
     last_id = 0
-    all.each {|vds| last_id = vds.id if vds.id > last_id}
+    active.each {|vds| last_id = vds.id if vds.id > last_id}
     last_id += 1
     uid = Guid.new.to_s.gsub('-', '')
     vds = VpsConfiguration.new(last_id, "xen", uid, ram)
