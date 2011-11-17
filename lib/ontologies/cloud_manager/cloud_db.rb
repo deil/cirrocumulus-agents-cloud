@@ -13,6 +13,7 @@ class VpsConfiguration
   attr_accessor :hvm
   attr_accessor :current
   attr_accessor :disks
+  attr_accessor :is_running
 
   def initialize(id, vds_type, uid, ram)
     @id = id
@@ -25,6 +26,20 @@ class VpsConfiguration
 
   def hvm?
     hvm == 1
+  end
+
+  def is_running?
+    is_running == 1
+  end
+
+  def start(origin = nil, agent = nil)
+    is_running = true
+    save(origin, agent)
+  end
+
+  def stop(origin = nil, agent = nil)
+    is_running = false
+    save(origin, agent)
   end
 
   def self.all
@@ -41,10 +56,12 @@ class VpsConfiguration
 
   def self.running
     vdses = []
+
     KnownFact.all(:conditions => ['key like "vds_%%"']).each do |f|
       if f.key =~ /vds_(\w+)$/
         vds_uid = $1
-        vdses << self.find_by_uid(vds_uid)
+        vds = self.find_by_uid(vds_uid)
+        vdses << vds if vds.is_running?
       end
     end
 
