@@ -22,6 +22,7 @@ class VpsConfiguration
     @current = VdsConfigurationHistory.new(ram)
     @disks = []
     @hvm = 0
+    @is_running = 0
   end
 
   def hvm?
@@ -33,12 +34,12 @@ class VpsConfiguration
   end
 
   def start(origin = nil, agent = nil)
-    is_running = true
+    self.is_running = 1
     save(origin, agent)
   end
 
   def stop(origin = nil, agent = nil)
-    is_running = false
+    self.is_running = 0
     save(origin, agent)
   end
 
