@@ -42,7 +42,7 @@ class VpsConfiguration
     save(origin, agent)
   end
 
-  def self.all
+  def self.active
     vdses = []
     KnownFact.all(:conditions => ['key like "vds_%%"']).each do |f|
       if f.key =~ /vds_(\w+)$/

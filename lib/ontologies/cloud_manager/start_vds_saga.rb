@@ -81,10 +81,10 @@ class StartVdsSaga < Saga
           if message.content.first == :active
             disk_number = message.content[1][1][1].to_i
             @virtual_disk_states.each do |disk|
-              next if disk[:disk].disk_number != disk_number
+              next if disk[:disk].number != disk_number
               disk[:active] = true
-              Log4r::Logger['agent'].info "[#{id}] Virtual disk #{disk[:disk].disk_number} is already active"
-              @ontology.engine.assert [:virtual_disk, disk[:disk].disk_number, :active_on, @selected_host[:agent]]
+              Log4r::Logger['agent'].info "[#{id}] Virtual disk #{disk[:disk].number} is already active"
+              @ontology.engine.assert [:virtual_disk, disk[:disk].number, :active_on, @selected_host[:agent]]
             end
           end
         else
@@ -95,12 +95,12 @@ class StartVdsSaga < Saga
             @need_to_activate = @virtual_disk_states.select {|disk_state| disk_state[:active] == false}
             @need_to_activate.each do |disk_state|
               Log4r::Logger['agent'].info "[#{id}] Activating virtual disk #{disk_state[:disk].disk_number}.."
-              msg = Cirrocumulus::Message.new(nil, 'request', [:stop, [:disk, [:disk_number, disk_state[:disk].disk_number]]])
+              msg = Cirrocumulus::Message.new(nil, 'request', [:stop, [:disk, [:disk_number, disk_state[:disk].number]]])
               msg.ontology = 'cirrocumulus-xen'
               msg.reply_with = 'ignored'
               @ontology.agent.send_message(msg)
 
-              msg = Cirrocumulus::Message.new(nil, 'request', [:start, [:disk, [:disk_number, disk_state[:disk].disk_number]]])
+              msg = Cirrocumulus::Message.new(nil, 'request', [:start, [:disk, [:disk_number, disk_state[:disk].number]]])
               msg.ontology = 'cirrocumulus-xen'
               msg.receiver = @selected_host[:agent]
               msg.reply_with = id
@@ -148,7 +148,7 @@ class StartVdsSaga < Saga
             [:eth, MAC.generate(1, vds.id, 0), MAC.generate(1, vds.id, 1)]
         ]
 
-        disks = vds.disks.map {|disk| [disk.block_device, disk.disk_number]}
+        disks = vds.disks.map {|disk| [disk.block_device, disk.number]}
         guest_parameters << [:disks] + disks
 
         msg = Cirrocumulus::Message.new(nil, 'request', [:start, guest_parameters])
