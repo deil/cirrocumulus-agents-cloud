@@ -19,20 +19,22 @@
 
   <logger name="os" level="ALL" additive="false" trace="true">
     <outputter>console</outputter>
-    <outputter>file</outputter>
+    <outputter>decisions_file</outputter>
   </logger>
   <logger name="agent" level="ALL" additive="false" trace="true">
 	  <outputter>console</outputter>
     <outputter>decisions_file</outputter>
-    <outputter>file</outputter>
   </logger>
-  <logger name="cirrocumulus" level="INFO" additive="false" trace="true">
+  <logger name="cirrocumulus" level="INFO" additive="false" trace="false">
 	  <outputter>console</outputter>
     <outputter>decisions_file</outputter>
     <outputter>file</outputter>
   </logger>
-  <logger name="kb" level="INFO" additive="false" trace="true">
+  <logger name="kb" level="DEBUG" additive="false" trace="false">
 	  <outputter>console</outputter>
+    <outputter>decisions_file</outputter>
+  </logger>
+  <logger name="kb_trace" level="DEBUG" additive="false" trace="false">
     <outputter>file</outputter>
   </logger>
 </log4r_config>

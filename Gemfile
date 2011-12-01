@@ -1,6 +1,7 @@
 source :gemcutter
 
-gem 'cirrocumulus', '~> 0.4.6'
+gem 'xmpp4r-simple', :git => 'git://github.com/blaine/xmpp4r-simple.git'
+gem 'cirrocumulus'
 gem 'activerecord', '~> 2.3.11'
 gem 'sqlite3'
 
