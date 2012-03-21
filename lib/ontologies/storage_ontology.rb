@@ -3,6 +3,7 @@ require File.join(AGENT_ROOT, 'ontologies/storage/storage_db.rb')
 require "#{AGENT_ROOT}/standalone/linux/#{STORAGE_CONFIG[:backend]}/storage_node.rb"
 require File.join(AGENT_ROOT, 'ontologies/storage/hdd.rb')
 require File.join(AGENT_ROOT, 'ontologies/storage/hdd_autodiscover.rb')
+require File.join(AGENT_ROOT, 'ontologies/storage/storage_ruleset.rb')
 
 class StorageOntology < Ontology::Base
   def initialize(agent)
