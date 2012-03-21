@@ -1,6 +1,6 @@
 require File.join(AGENT_ROOT, 'config/storage_config.rb')
 require File.join(AGENT_ROOT, 'ontologies/storage/storage_db.rb')
-require "#{AGENT_ROOT}/standalone/#{Cirrocumulus::platform}/#{STORAGE_CONFIG[:backend]}/storage_node.rb"
+require "#{AGENT_ROOT}/standalone/linux/#{STORAGE_CONFIG[:backend]}/storage_node.rb"
 require File.join(AGENT_ROOT, 'ontologies/storage/hdd.rb')
 require File.join(AGENT_ROOT, 'ontologies/storage/hdd_autodiscover.rb')
 
