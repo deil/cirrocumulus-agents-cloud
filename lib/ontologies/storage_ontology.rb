@@ -1,6 +1,8 @@
 require File.join(AGENT_ROOT, 'config/storage_config.rb')
 require File.join(AGENT_ROOT, 'ontologies/storage/storage_db.rb')
 require "#{AGENT_ROOT}/standalone/#{Cirrocumulus::platform}/#{STORAGE_CONFIG[:backend]}/storage_node.rb"
+require File.join(AGENT_ROOT, 'ontologies/storage/hdd.rb')
+require File.join(AGENT_ROOT, 'ontologies/storage/hdd_autodiscover.rb')
 
 class StorageOntology < Ontology::Base
   def initialize(agent)
@@ -9,6 +11,9 @@ class StorageOntology < Ontology::Base
 
   def restore_state()
     changes_made = 0
+
+    logger.debug "discovering information about local HDD and MD devices"
+    @storage_information = HddAutodiscover.new(STORAGE_CONFIG[:volume_name]).collect()
 
     StorageNode.list_disks().each do |volume|
       disk = VirtualDisk.find_by_disk_number(volume)

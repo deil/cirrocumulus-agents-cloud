@@ -1,5 +1,3 @@
-require 'hdd.rb'
-
 class HddAutodiscover
   def initialize(volume_name)
     @vg_name = volume_name
