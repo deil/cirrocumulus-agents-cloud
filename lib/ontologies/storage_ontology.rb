@@ -7,13 +7,17 @@ require File.join(AGENT_ROOT, 'ontologies/storage/hdd_autodiscover.rb')
 class StorageOntology < Ontology::Base
   def initialize(agent)
     super('cirrocumulus-storage', agent)
+
+    @tick_counter = 0
   end
 
   def restore_state()
     changes_made = 0
 
     logger.debug "discovering information about local HDD and MD devices"
-    @storage_information = HddAutodiscover.new(STORAGE_CONFIG[:volume_name]).collect()
+    @storage_information = HddAutodiscover.new(STORAGE_CONFIG[:volume_name])
+    collected = @storage_information.collect()
+    @engine.assert [:storage, :free_space, collected[:lvm][:free]]
 
     StorageNode.list_disks().each do |volume|
       disk = VirtualDisk.find_by_disk_number(volume)
@@ -58,24 +62,37 @@ class StorageOntology < Ontology::Base
     logger.info "restored state, made %d changes" % [changes_made]
   end
 
+  protected
+
   def handle_message(message, kb)
     case message.act
       when 'query-ref'
-        msg = query(message.content)
-        msg.receiver = message.sender
-        msg.ontology = self.name
+        msg             = query(message.content)
+        msg.receiver    = message.sender
+        msg.ontology    = self.name
         msg.in_reply_to = message.reply_with
         self.agent.send_message(msg)
 
       when 'query-if'
-        msg = query_if(message.content)
-        msg.receiver = message.sender
-        msg.ontology = self.name
+        msg             = query_if(message.content)
+        msg.receiver    = message.sender
+        msg.ontology    = self.name
         msg.in_reply_to = message.reply_with
         self.agent.send_message(msg)
 
       when 'request'
         handle_request(message)
+    end
+  end
+
+  def handle_tick()
+    if @tick_counter >= 30
+      storage_info = @storage_information.collect()
+      @engine.replace [:storage, :free_space, :FREE_SPACE], storage_info[:lvm][:free]
+
+      @tick_counter = 0
+    else
+      @tick_counter += 1
     end
   end
 

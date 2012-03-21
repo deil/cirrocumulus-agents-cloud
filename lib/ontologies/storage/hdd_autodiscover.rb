@@ -19,6 +19,10 @@ class HddAutodiscover
         md_a = md_l.split(' ')
         if md_a[0] == 'State'
           result[:mdadm][:state] = md_a[2]
+        elsif md_a[0] == 'Raid' && md_a[1] == 'Devices'
+          result[:mdadm][:total_devices] = md_a[3].to_i
+        elsif md_a[0] == 'Working' && md_a[1] == 'Devices'
+          result[:mdadm][:working_devices] = md_a[3].to_i
         elsif md_a[0] == 'Failed'
           result[:mdadm][:failed_devices] = md_a[3].to_i
         elsif md_a[0] == 'Number'
