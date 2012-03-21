@@ -7,7 +7,7 @@ require File.join(AGENT_ROOT, 'ontologies/storage/hdd_autodiscover.rb')
 class StorageOntology < Ontology::Base
   def initialize(agent)
     super('cirrocumulus-storage', agent)
-
+    @engine = StorageRuleset.new(self)
     @tick_counter = 0
   end
 
