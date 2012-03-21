@@ -1,9 +1,10 @@
 source :gemcutter
 
-gem 'xmpp4r-simple', :git => 'git://github.com/blaine/xmpp4r-simple.git'
-gem 'cirrocumulus'
-gem 'activerecord', '~> 2.3.11'
+gem 'cirrocumulus', '~>0.6.0'
+gem 'activerecord', '~>2.3.11'
 gem 'sqlite3'
+
+gem "xmpp4r-simple", :git => 'git://github.com/blaine/xmpp4r-simple.git'
 
 group :xen do
   gem 'ruby-libvirt', '0.4.0'

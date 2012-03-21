@@ -21,6 +21,9 @@
     <outputter>console</outputter>
     <outputter>decisions_file</outputter>
   </logger>
+  <logger name="bus" level="ALL" additive="false" trace="false">
+    <outputter>console</outputter>
+  </logger>
   <logger name="agent" level="ALL" additive="false" trace="true">
 	  <outputter>console</outputter>
     <outputter>decisions_file</outputter>

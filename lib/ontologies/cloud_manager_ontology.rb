@@ -1,5 +1,5 @@
 require 'cirrocumulus/saga'
-require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_db.rb')
+require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_db-o1.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_ruleset.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/build_virtual_disk_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/build_xen_vds_saga.rb')
@@ -17,7 +17,8 @@ class CloudManagerOntology < Ontology::Base
   end
 
   def restore_state()
-    @engine.assert [:just_started] # TODO: need to assert any fact to initialize KB
+    @engine.start()
+    @engine.assert [:just_started]
 
     VpsConfiguration.active.each do |vds|
       @engine.assert [:vds, vds.uid, :state, :stopped]
@@ -26,7 +27,6 @@ class CloudManagerOntology < Ontology::Base
 
     VpsConfiguration.running.each do |vds|
       @engine.replace [:vds, vds.uid, :state, :CURRENT_STATE], :running
-      #@engine.assert [:vds, vds.uid, :should_be_running] # TODO: deprecated, remove
     end
 
     @engine.retract [:just_started]
