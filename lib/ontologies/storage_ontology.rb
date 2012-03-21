@@ -87,7 +87,7 @@ class StorageOntology < Ontology::Base
   end
 
   def handle_tick()
-    if @tick_counter >= 30
+    if @tick_counter >= 60
       storage_info = @storage_information.collect()
       @engine.replace [:storage, :free_space, :FREE_SPACE], storage_info[:lvm][:free]
 
