@@ -325,31 +325,18 @@ class StorageOntology < Ontology::Base
       end
     end
 
-    if obj.first == :export
-      perform_delete_export(disk_number, message)
-    elsif obj.first == :volume
-      perform_delete_volume(disk_number, message)
+    result = case obj.first
+      when :export
+        @worker.delete_export(disk_number, message.sender)
+
+      when :volume
+        @worker.delete_volume(disk_number, message.sender)
     end
-  end
-
-  # (delete (export (disk_number ..)))
-  def perform_delete_export(disk_number, message)
-    result = @worker.delete_export(disk_number, message.sender)
 
     msg = Cirrocumulus::Message.new(nil, result[:action], [message.content, [result[:reason]]])
     msg.ontology = self.name
     self.agent.reply_to_message(msg, message)
   end
-
-  # (delete (volume (disk_number 1)))
-  def perform_delete_volume(disk_number, message)
-    result = @worker.delete_volume(disk_number, message.sender)
-
-    msg = Cirrocumulus::Message.new(nil, result[:action], [message.content, [result[:reason]]])
-    msg.ontology = self.name
-    self.agent.reply_to_message(msg, message)
-  end
-
 end
 
 Log4r::Logger['agent'].info "storage backend = #{STORAGE_CONFIG[:backend]}"
