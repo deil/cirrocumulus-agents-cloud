@@ -21,14 +21,14 @@ class StorageWorker
       disk.save('cirrocumulus', origin)
 
       if StorageNode.add_export(disk_number, disk_slot)
-        return {:action => :failure, :reason => :unable_to_add_export}
-      else
         state = VirtualDiskState.find_by_disk_number(disk_number)
         state = VirtualDiskState.new(disk_number, true) unless state
         state.is_up = true
         state.save('cirrocumulus', origin)
 
         return {:action => :inform, :reason => :finished}
+      else
+        return {:action => :failure, :reason => :unable_to_add_export}
       end
     else
       return {:action => :failure, :reason => :unable_to_create_volume}
