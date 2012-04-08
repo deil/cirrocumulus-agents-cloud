@@ -8,17 +8,28 @@ require File.join(AGENT_ROOT, 'ontologies/storage/storage_ruleset.rb')
 class StorageOntology < Ontology::Base
   def initialize(agent)
     super('cirrocumulus-storage', agent)
+
+    logger.info "Starting StorageOntology.."
     @engine = StorageRuleset.new(self)
     @tick_counter = 0
+
+    logger.info "My storage number is %d" % [storage_number()]
   end
 
   def restore_state()
+    logger.info "Restoring previous state"
     changes_made = 0
 
-    logger.debug "discovering information about local HDD and MD devices"
+    logger.info "Discovering information about storage subsystem (HDD and MD devices)"
     @storage_information = HddAutodiscover.new(STORAGE_CONFIG[:volume_name])
     collected = @storage_information.collect()
+
     @engine.assert [:storage, :free_space, collected[:lvm][:free]]
+    collected[:hdd].each do |hdd|
+      @engine.assert [:hdd, hdd.device, :sn, hdd.sn]
+      @engine.assert [:hdd, hdd.device, :temperature, hdd.temperature]
+      @engine.assert [:hdd, hdd.device, :health, hdd.health]
+    end
 
     StorageNode.list_disks().each do |volume|
       disk = VirtualDisk.find_by_disk_number(volume)
@@ -60,7 +71,7 @@ class StorageOntology < Ontology::Base
       end
     end
 
-    logger.info "restored state, made %d changes" % [changes_made]
+    logger.info "State restored, made %d changes to node configuration" % [changes_made]
   end
 
   protected
@@ -90,6 +101,11 @@ class StorageOntology < Ontology::Base
     if @tick_counter >= 60
       storage_info = @storage_information.collect()
       @engine.replace [:storage, :free_space, :FREE_SPACE], storage_info[:lvm][:free]
+      storage_info[:hdd].each do |hdd|
+        @engine.replace [:hdd, hdd.device, :sn, :SN], hdd.sn
+        @engine.replace [:hdd, hdd.device, :temperature, :TEMP], hdd.temperature
+        @engine.replace [:hdd, hdd.device, :health, :STATUS], hdd.health
+      end
 
       @tick_counter = 0
     else
