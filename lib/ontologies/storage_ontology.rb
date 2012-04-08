@@ -74,8 +74,6 @@ class StorageOntology < Ontology::Base
 
   private
 
-  attr_reader :worker
-
   def storage_number
     hostname = `hostname`
     if hostname =~ STORAGE_CONFIG[:hostname_mask]
@@ -240,7 +238,7 @@ class StorageOntology < Ontology::Base
   # (create (disk (disk_number ..) (size ..)))
   # (create (disk (disk_number ..) (size ..) (slot ..))
   def perform_create_disk(disk_number, disk_slot, disk_size, message)
-    result = self.worker.perform_create_disk(disk_number, disk_slot, disk_size, message.sender)
+    result = @worker.perform_create_disk(disk_number, disk_slot, disk_size, message.sender)
 
     msg = Cirrocumulus::Message.new(nil, result[:action], [message.content, [result[:reason]]])
     msg.ontology = self.name
