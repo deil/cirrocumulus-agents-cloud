@@ -20,59 +20,9 @@ class StorageOntology < Ontology::Base
     logger.info "Restoring previous state"
     changes_made = 0
 
-    logger.info "Discovering information about storage subsystem (HDD and MD devices)"
-    @storage_information = HddAutodiscover.new(STORAGE_CONFIG[:volume_name])
-    collected = @storage_information.collect()
-
-    @engine.assert [:storage, :free_space, collected[:lvm][:free]]
-    collected[:hdd].each do |hdd|
-      @engine.assert [:hdd, hdd.device, :sn, hdd.sn]
-      @engine.assert [:hdd, hdd.device, :temperature, hdd.temperature]
-      @engine.assert [:hdd, hdd.device, :health, hdd.health]
-    end
-
-    StorageNode.list_disks().each do |volume|
-      disk = VirtualDisk.find_by_disk_number(volume)
-      next if disk
-
-      disk_size = StorageNode.volume_size(volume)
-      logger.info "autodiscovered virtual disk %d with size %d Gb" % [volume, disk_size]
-      disk = VirtualDisk.new(volume, disk_size)
-      disk.save('discovered')
-    end
-
-    known_disks = VirtualDisk.all
-    known_disks.each do |disk|
-      if !StorageNode.volume_exists?(disk.disk_number)
-        logger.info "Volume for disk_number %d does not exists, removing from database" % [disk.disk_number]
-        state = VirtualDiskState.find_by_disk_number(disk.disk_number)
-        state.delete if state
-        disk.delete
-      else
-        state = VirtualDiskState.find_by_disk_number(disk.disk_number)
-        export_is_up = StorageNode.is_exported?(disk.disk_number)
-
-        if state.nil?
-          logger.info "adding state record for virtual disk %d: %s" % [disk.disk_number, export_is_up]
-          state = VirtualDiskState.new(disk.disk_number, export_is_up)
-          state.save('discovered')
-          next
-        end
-
-        export_should_be_up = state.is_up == true
-
-        if export_should_be_up && !export_is_up
-          logger.info "bringing up export #{disk.disk_number}"
-          StorageNode.add_export(disk.disk_number, storage_number())
-          changes_made += 1
-        elsif !export_should_be_up && export_is_up
-          logger.info "shutting down export #{disk.disk_number}"
-          StorageNode.remove_export(disk.disk_number)
-          changes_made += 1
-        end
-
-      end
-    end
+    autodiscover_devices()
+    discover_new_disks()
+    changes_made += restore_exports_states()
 
     logger.info "State restored, made %d changes to node configuration" % [changes_made]
   end
@@ -125,6 +75,73 @@ class StorageOntology < Ontology::Base
     end
 
     0
+  end
+
+  def autoriscover_devices
+    logger.debug "Discovering information about storage subsystem (HDD and MD devices)"
+    @storage_information = HddAutodiscover.new(STORAGE_CONFIG[:volume_name])
+    collected = @storage_information.collect()
+
+    @engine.assert [:storage, :free_space, collected[:lvm][:free]]
+    collected[:hdd].each do |hdd|
+      @engine.assert [:hdd, hdd.device, :sn, hdd.sn]
+      @engine.assert [:hdd, hdd.device, :temperature, hdd.temperature]
+      @engine.assert [:hdd, hdd.device, :health, hdd.health]
+    end
+  end
+
+  def discover_new_disks
+    logger.debug "Discovering new virtual disks."
+
+    StorageNode.list_disks().each do |volume|
+      disk = VirtualDisk.find_by_disk_number(volume)
+      next if disk
+
+      disk_size = StorageNode.volume_size(volume)
+      logger.info "autodiscovered virtual disk %d with size %d Mb" % [volume, disk_size]
+      disk = VirtualDisk.new(volume, disk_size)
+      disk.save('discovered')
+    end
+  end
+
+  def restore_exports_states
+    logger.debug "Restoring exports states."
+
+    changes_made = 0
+    known_disks = VirtualDisk.all
+
+    known_disks.each do |disk|
+      if !StorageNode.volume_exists?(disk.disk_number)
+        logger.info "Volume for disk number %d does not exists, removing from database" % [disk.disk_number]
+        state = VirtualDiskState.find_by_disk_number(disk.disk_number)
+        state.delete if state
+        disk.delete
+      else
+        state = VirtualDiskState.find_by_disk_number(disk.disk_number)
+        export_is_up = StorageNode.is_exported?(disk.disk_number)
+
+        if state.nil?
+          logger.info "adding state record for virtual disk %d: %s" % [disk.disk_number, export_is_up]
+          state = VirtualDiskState.new(disk.disk_number, export_is_up)
+          state.save('discovered')
+          next
+        end
+
+        export_should_be_up = state.is_up == true
+
+        if export_should_be_up && !export_is_up
+          logger.info "bringing up export #{disk.disk_number}"
+          StorageNode.add_export(disk.disk_number, storage_number())
+          changes_made += 1
+        elsif !export_should_be_up && export_is_up
+          logger.info "shutting down export #{disk.disk_number}"
+          StorageNode.remove_export(disk.disk_number)
+          changes_made += 1
+        end
+      end
+    end
+
+    changes_made
   end
 
   def query(obj)
