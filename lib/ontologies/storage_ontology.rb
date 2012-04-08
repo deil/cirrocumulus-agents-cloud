@@ -44,7 +44,10 @@ class StorageOntology < Ontology::Base
     known_disks = VirtualDisk.all
     known_disks.each do |disk|
       if !StorageNode.volume_exists?(disk.disk_number)
-        logger.warn "volume for disk_number %d does not exist" % [disk.disk_number]
+        logger.info "Volume for disk_number %d does not exists, removing from database" % [disk.disk_number]
+        state = VirtualDiskState.find_by_disk_number(disk.disk_number)
+        state.delete if state
+        disk.delete
       else
         state = VirtualDiskState.find_by_disk_number(disk.disk_number)
         export_is_up = StorageNode.is_exported?(disk.disk_number)
