@@ -2,6 +2,35 @@ require "#{AGENT_ROOT}/standalone/linux/#{STORAGE_CONFIG[:backend]}/storage_node
 
 # Worker class for Storage ontology. Performs low-level operations
 class StorageWorker
+  def create_volume(disk_number, disk_size, origin)
+    return {:action => :refuse, :reason => :already_exists} if StorageNode::volume_exists?(disk_number)
+    return {:action => :refuse, :reason => :not_enough_free_space} if StorageNode.free_space < disk_size
+
+    if StorageNode::create_volume(disk_number, disk_size)
+      disk = VirtualDisk.new(disk_number, disk_size)
+      disk.save('cirrocumulus', origin)
+      return {:action => :inform, :reason => :finished}
+    else
+      return {:action => :failure, :reason => :unknown_reason}
+    end
+  end
+
+  def create_export(disk_number, disk_slot, origin)
+    return :action => :refuse, :reason => :volume_does_not_exist unless StorageNode::volume_exists?(disk_number)
+    return :action => :refuse, :reason => :already_exists if StorageNode::is_exported?(disk_number)
+
+    if StorageNode::add_export(disk_number, disk_slot)
+      state = VirtualDiskState.find_by_disk_number(disk_number)
+      state = VirtualDiskState.new(disk_number, true) unless state
+      state.is_up = true
+      state.save('cirrocumulus', message.sender)
+
+      return :action => :inform, :reason => :finished
+    else
+      return :action => :failure, :reason => :unable_to_add_export
+    end
+  end
+
   # Creates new virtual disk, brings it export up and adds this information to local database
   #
   # * *Args* :

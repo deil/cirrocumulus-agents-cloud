@@ -226,93 +226,18 @@ class StorageOntology < Ontology::Base
 
     disk_slot ||= storage_number()
 
-    if obj.first == :volume
-      perform_create_volume(disk_number, disk_size, message)
-    elsif obj.first == :export
-      perform_create_export(disk_number, disk_slot, message)
-    elsif obj.first == :disk
-      perform_create_disk(disk_number, disk_slot, disk_size, message)
+    result = case obj.first
+      when :disk
+        @worker.create_disk(disk_number, disk_slot, disk_size, message.sender)
+      when :volume
+        @worker.create_volume(disk_number, disk_size, message.sender)
+      when :export
+        @worker.create_export(disk_number, disk_slot, message.sender)
     end
-  end
-
-  # (create (disk (disk_number ..) (size ..)))
-  # (create (disk (disk_number ..) (size ..) (slot ..))
-  def perform_create_disk(disk_number, disk_slot, disk_size, message)
-    result = @worker.create_disk(disk_number, disk_slot, disk_size, message.sender)
 
     msg = Cirrocumulus::Message.new(nil, result[:action], [message.content, [result[:reason]]])
     msg.ontology = self.name
     self.agent.reply_to_message(msg, message)
-  end
-
-  # (create (volume (disk_number ..) (size ..)))
-  def perform_create_volume(disk_number, disk_size, message)
-    if StorageNode::volume_exists?(disk_number)
-      msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:already_exists]])
-      msg.ontology = self.name
-      msg.receiver = message.sender
-      msg.in_reply_to = message.reply_with
-      self.agent.send_message(msg)
-      return
-    end
-
-    if StorageNode::create_volume(disk_number, disk_size)
-      disk = VirtualDisk.new(disk_number, disk_size)
-      disk.save('cirrocumulus', message.sender)
-
-      msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
-      msg.ontology = self.name
-      msg.receiver = message.sender
-      msg.in_reply_to = message.reply_with
-      self.agent.send_message(msg)
-    else
-      msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
-      msg.ontology = self.name
-      msg.receiver = message.sender
-      msg.in_reply_to = message.reply_with
-      self.agent.send_message(msg)
-    end
-  end
-
-  # (create (export (disk_number ..)))
-  # (create (export (disk_number ..) (slot ..)))
-  def perform_create_export(disk_number, disk_slot, message)
-    if !StorageNode::volume_exists?(disk_number)
-      msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:volume_does_not_exist]])
-      msg.ontology = self.name
-      msg.receiver = message.sender
-      msg.in_reply_to = message.reply_with
-      self.agent.send_message(msg)
-      return
-    end
-
-    if StorageNode::is_exported?(disk_number)
-      msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:already_exists]])
-      msg.ontology = self.name
-      msg.receiver = message.sender
-      msg.in_reply_to = message.reply_with
-      self.agent.send_message(msg)
-      return
-    end
-
-    if StorageNode::add_export(disk_number, disk_slot)
-      state = VirtualDiskState.find_by_disk_number(disk_number)
-      state = VirtualDiskState.new(disk_number, true) unless state
-      state.is_up = true
-      state.save('cirrocumulus', message.sender)
-
-      msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
-      msg.ontology = self.name
-      msg.receiver = message.sender
-      msg.in_reply_to = message.reply_with
-      self.agent.send_message(msg)
-    else
-      msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
-      msg.ontology = self.name
-      msg.receiver = message.sender
-      msg.in_reply_to = message.reply_with
-      self.agent.send_message(msg)
-    end
   end
 
   # (delete (..))
