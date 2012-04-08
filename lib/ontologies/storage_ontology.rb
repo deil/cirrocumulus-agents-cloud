@@ -77,7 +77,9 @@ class StorageOntology < Ontology::Base
     0
   end
 
-  def autoriscover_devices
+  # Looks at LVM volume name and discovers underlying MD and HDD devices.
+  # It also collects some critical information about storage subsystem (e.g. free space)
+  def autodiscover_devices
     logger.debug "Discovering information about storage subsystem (HDD and MD devices)"
     @storage_information = HddAutodiscover.new(STORAGE_CONFIG[:volume_name])
     collected = @storage_information.collect()
@@ -90,6 +92,7 @@ class StorageOntology < Ontology::Base
     end
   end
 
+  # Looks through storage subsystem and searches for new virtual disk volumes, not recorded in internal database
   def discover_new_disks
     logger.debug "Discovering new virtual disks."
 
@@ -104,6 +107,7 @@ class StorageOntology < Ontology::Base
     end
   end
 
+  # Restores states of recorded virtual disks. It can bring up or take down corresponding export!
   def restore_exports_states
     logger.debug "Restoring exports states."
 
