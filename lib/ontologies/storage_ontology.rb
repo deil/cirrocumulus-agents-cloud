@@ -4,6 +4,7 @@ require "#{AGENT_ROOT}/standalone/linux/#{STORAGE_CONFIG[:backend]}/storage_node
 require File.join(AGENT_ROOT, 'ontologies/storage/hdd.rb')
 require File.join(AGENT_ROOT, 'ontologies/storage/hdd_autodiscover.rb')
 require File.join(AGENT_ROOT, 'ontologies/storage/storage_ruleset.rb')
+require_relative 'storage/storage_worker.rb'
 
 class StorageOntology < Ontology::Base
   def initialize(agent)
@@ -11,6 +12,7 @@ class StorageOntology < Ontology::Base
 
     logger.info "Starting StorageOntology.."
     @engine = StorageRuleset.new(self)
+    @worker = StorageWorker.new
     @tick_counter = 0
 
     logger.info "My storage number is %d" % [storage_number()]
@@ -27,8 +29,8 @@ class StorageOntology < Ontology::Base
     logger.info "State restored, made %d changes to node configuration" % [changes_made]
 
     all_disks_count = VirtualDisk.all.size
-    total_disks_size = VirtualDisk.all.sum(&:size)
-    logger.info "This storage handles %d virtual disks with total size of %d Mb" % [all_disks_count, total_disks_size]
+    total_disks_size = VirtualDisk.all.sum(&:size)/1024
+    logger.info "This storage handles %d virtual disks with total size of %d Gb" % [all_disks_count, total_disks_size]
   end
 
   protected
@@ -71,6 +73,8 @@ class StorageOntology < Ontology::Base
   end
 
   private
+
+  attr_reader :worker
 
   def storage_number
     hostname = `hostname`
@@ -236,6 +240,14 @@ class StorageOntology < Ontology::Base
   # (create (disk (disk_number ..) (size ..)))
   # (create (disk (disk_number ..) (size ..) (slot ..))
   def perform_create_disk(disk_number, disk_slot, disk_size, message)
+    result = self.worker.perform_create_disk(disk_number, disk_slot, disk_size, message.sender)
+
+    msg = Cirrocumulus::Message.new(nil, result[:action], [message.content, [result[:reason]]])
+    msg.ontology = self.name
+    msg.receiver = message.sender
+    msg.in_reply_to = message.reply_with
+    self.agent.send_message(msg)
+
     if StorageNode.volume_exists?(disk_number)
       msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:already_exists]])
       msg.ontology = self.name
