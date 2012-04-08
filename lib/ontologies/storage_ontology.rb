@@ -242,7 +242,7 @@ class StorageOntology < Ontology::Base
 
     msg = Cirrocumulus::Message.new(nil, result[:action], [message.content, [result[:reason]]])
     msg.ontology = self.name
-    self.agent.reply_message(msg, message)
+    self.agent.reply_to_message(msg, message)
   end
 
   # (create (volume (disk_number ..) (size ..)))
