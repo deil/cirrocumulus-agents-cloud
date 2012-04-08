@@ -25,6 +25,10 @@ class StorageOntology < Ontology::Base
     changes_made += restore_exports_states()
 
     logger.info "State restored, made %d changes to node configuration" % [changes_made]
+
+    all_disks_count = VirtualDisk.all.size
+    total_disks_size = VirtualDisk.all.sum(&:size)
+    logger.info "This storage handles %d virtual disks with total size of %d Mb" % [all_disks_count, total_disks_size]
   end
 
   protected
