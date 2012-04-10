@@ -17,30 +17,13 @@ class XenOntology < Ontology::Base
   end
 
   def restore_state()
+    logger.info "Restoring previous state"
     @engine.assert [:just_started]
 
-    changes_made = 0
-    Mdraid.list_disks().each do |discovered|
-      disk = VirtualDisk.find_by_disk_number(discovered)
-      next if disk
+    discover_new_disks()
+    changes_made = bring_all_disks_down()
 
-      logger.info "autodiscovered virtual disk %d" % [discovered]
-      disk = VirtualDisk.new(discovered)
-      disk.save('discovered')
-      #@engine.assert [:virtual_disk, discovered, :active]
-    end
-
-    known_disks = VirtualDisk.all
-    known_disks.each do |disk|
-      if Mdraid.get_status(disk.disk_number) == :stopped
-        logger.info "bringing up disk %d" % [disk.disk_number]
-        changes_made += 1 if Mdraid.assemble(disk.disk_number)
-      else
-        #@engine.assert [:virtual_disk, disk.disk_number, :active]
-      end
-    end
-
-    logger.info "restored state, made %d changes" % [changes_made]
+    logger.info "State restored, made %d changes to node configuration" % [changes_made]
   end
   
   def handle_tick()
@@ -108,6 +91,33 @@ class XenOntology < Ontology::Base
   end
 
   private
+
+  def discover_new_disks()
+    logger.debug "Discovering running MD devices"
+
+    Mdraid.list_disks().each do |discovered|
+      disk = VirtualDisk.find_by_disk_number(discovered)
+      next if disk
+
+      logger.info "autodiscovered virtual disk %d" % [discovered]
+      disk = VirtualDisk.new(discovered)
+      disk.save('discovered')
+      #@engine.assert [:virtual_disk, discovered, :active]
+    end
+  end
+
+  def brind_all_disks_down()
+    changes_made = 0
+
+    VirtualDisk.all.each do |disk|
+      if Mdraid.get_status(disk.disk_number) == :active
+        logger.info "bringing down disk %d" % [disk.disk_number]
+        changes_made += 1 if Mdraid.stop(disk.disk_number)
+      end
+    end
+
+    changes_made
+  end
 
   def query(obj)
     msg = Cirrocumulus::Message.new(nil, 'inform', nil)
