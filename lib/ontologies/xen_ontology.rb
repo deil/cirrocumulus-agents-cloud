@@ -21,7 +21,7 @@ class XenOntology < Ontology::Base
     @engine.assert [:just_started]
 
     discover_new_disks()
-    changes_made = bring_all_disks_down()
+    changes_made = shut_all_disks_down()
 
     logger.info "State restored, made %d changes to node configuration" % [changes_made]
   end
@@ -106,12 +106,12 @@ class XenOntology < Ontology::Base
     end
   end
 
-  def brind_all_disks_down()
+  def shut_all_disks_down()
     changes_made = 0
 
     VirtualDisk.all.each do |disk|
       if Mdraid.get_status(disk.disk_number) == :active
-        logger.info "bringing down disk %d" % [disk.disk_number]
+        logger.info "shutting down disk %d" % [disk.disk_number]
         changes_made += 1 if Mdraid.stop(disk.disk_number)
       end
     end
