@@ -1,9 +1,10 @@
 require 'cirrocumulus/rule_engine'
 
-class XenEngine < RuleEngine::Base
+class XenRuleset < RuleEngine::Base
   attr_reader :ontology
   
   def initialize(ontology)
+    super()
     @ontology = ontology
   end
   

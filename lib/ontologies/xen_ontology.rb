@@ -1,8 +1,6 @@
-require 'cirrocumulus/saga'
 require File.join(AGENT_ROOT, 'config/xen_config.rb')
-require File.join(AGENT_ROOT, 'ontologies/xen/xen_ruleset.rb')
-require File.join(AGENT_ROOT, 'ontologies/xen/dom_u_kb.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_db.rb')
+require File.join(AGENT_ROOT, 'ontologies/xen/xen_ruleset.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_node.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/start_guest_saga.rb')
 require File.join(AGENT_ROOT, 'standalone/mdraid.rb')
@@ -10,11 +8,11 @@ require File.join(AGENT_ROOT, 'standalone/dom_u.rb')
 require File.join(AGENT_ROOT, 'standalone/mac.rb')
 
 class XenOntology < Ontology::Base
-  attr_reader :engine
-  
   def initialize(agent)
     super('cirrocumulus-xen', agent)
-    @engine = XenEngine.new(self)
+    logger.info "Starting XenOntology.."
+    @engine = XenRuleset.new(self)
+    @tick_counter = 0
   end
 
   def restore_state()
