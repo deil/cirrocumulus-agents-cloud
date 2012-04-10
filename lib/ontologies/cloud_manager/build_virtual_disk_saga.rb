@@ -18,7 +18,7 @@ class BuildVirtualDiskSaga < Saga
         Log4r::Logger['agent'].info "[#{id}] Building Virtual Disk #{disk.number}"
         msg = Cirrocumulus::Message.new(nil, 'request', [:create, [:disk, [:disk_number, disk.number], [:size, disk.size]]])
         msg.ontology = 'cirrocumulus-storage'
-        msg.reply_with = @id
+        msg.conversation_id = @id
         @ontology.agent.send_message(msg)
         @storages_replied = []
         change_state(STATE_CREATING_VOLUME)
@@ -39,31 +39,38 @@ class BuildVirtualDiskSaga < Saga
           if @storages_replied.size == 2
             msg = Cirrocumulus::Message.new(nil, 'query-ref', [:free_memory])
             msg.ontology = 'cirrocumulus-xen'
-            msg.reply_with = @id
+            msg.conversation_id = @id
             @ontology.agent.send_message(msg)
             @hosts = []
 
             change_state(STATE_SELECTING_HOST)
-            set_timeout(1)
+            set_timeout(DEFAULT_TIMEOUT)
           end
         end
 
       when STATE_SELECTING_HOST
         if message.nil? # timeout
-          #Log4r::Logger['agent'].info "[#{id}] Found host nodes: %s" % @hosts.inspect
+          Log4r::Logger['agent'].info "[#{id}] Found host nodes: %s" % @hosts.inspect
           sorted_hosts = @hosts.sort {|a,b| b[:free_memory] <=> a[:free_memory]}
-          @selected_host = sorted_hosts.first
-          @selected_host[:attempted] = true
-          @selected_host[:failed] = false
-          Log4r::Logger['agent'].info "[#{id}] Will try #{@selected_host[:agent]}"
 
-          msg = Cirrocumulus::Message.new(nil, 'request', [:create, [:disk, [:disk_number, disk.number]]])
-          msg.ontology = 'cirrocumulus-xen'
-          msg.receiver = @selected_host[:agent]
-          msg.reply_with = id
-          @ontology.agent.send_message(msg)
-          change_state(STATE_CREATING_DISK)
-          set_timeout(DEFAULT_TIMEOUT)
+          unless sorted_hosts.empty?
+            @selected_host = sorted_hosts.first
+            @selected_host[:attempted] = true
+            @selected_host[:failed] = false
+            Log4r::Logger['agent'].info "[#{id}] Will try #{@selected_host[:agent]}"
+
+            msg = Cirrocumulus::Message.new(nil, 'request', [:create, [:disk, [:disk_number, disk.number]]])
+            msg.ontology = 'cirrocumulus-xen'
+            msg.receiver = @selected_host[:agent]
+            msg.conversation_id = @id
+            @ontology.agent.send_message(msg)
+            change_state(STATE_CREATING_DISK)
+            set_timeout(DEFAULT_TIMEOUT)
+          else
+            notify_failure(:build_failed)
+            error()
+            @ontology.engine.replace [:virtual_disk, disk.number, :actual_state, :BUILDING], :failed_to_build
+          end
         else
           if message.content.first == :"=" && message.content[1].first == :free_memory
             @hosts << {:agent => message.sender, :free_memory => message.content[2].first.to_i, :attempted => false, :failed => false}
@@ -99,6 +106,7 @@ class BuildVirtualDiskSaga < Saga
     msg.ontology = @ontology.name
     msg.receiver = @context.sender
     msg.in_reply_to = @context.reply_with
+    msg.conversation_id = @context.conversation_id
     @ontology.agent.send_message(msg)
   end
 

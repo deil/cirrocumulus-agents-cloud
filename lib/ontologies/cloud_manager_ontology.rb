@@ -36,6 +36,8 @@ class CloudManagerOntology < Ontology::Base
   end
 
   def handle_message(message, kb)
+    #p message
+
     case message.act
       when 'inform' then
         @engine.assert message.content if !@engine.query message.content
@@ -72,11 +74,11 @@ class CloudManagerOntology < Ontology::Base
   
   def start_xen_vds(vds)
     saga = create_saga(StartVdsSaga)
-    saga.start(vds, nil)
+    #saga.start(vds, nil)
   end
   
   def stop_xen_vds(vds)
-    create_saga(StopVdsSaga).start(vds, nil)
+    #create_saga(StopVdsSaga).start(vds, nil)
   end
 
   def build_xen_vds(vds)
@@ -199,7 +201,19 @@ class CloudManagerOntology < Ontology::Base
         msg.in_reply_to = context.reply_with
         self.agent.send_message(msg)
       end
+    elsif obj.include? :disk
+      disk_number = create_virtual_disk(obj[:disk])
+      msg = Cirrocumulus::Message.new(nil, 'inform', [original_message.content, [:disk_number, disk_number]])
+      msg.ontology = original_message.ontology
+      self.agent.reply_to_message(msg, original_message)
     end
+  end
+
+  def create_virtual_disk(obj)
+    disk_size = obj[:size]
+    disk = VdsDisk.create(disk_size)
+    @engine.assert [:virtual_disk, disk.number, :actual_state, :created]
+    disk.number
   end
 
 end
