@@ -4,7 +4,7 @@ require File.join(AGENT_ROOT, 'ontologies/xen/xen_db.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_ruleset.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/xen_node.rb')
 require File.join(AGENT_ROOT, 'ontologies/xen/start_guest_saga.rb')
-require File.join(AGENT_ROOT, 'standalone/mdraid.rb')
+require_relative 'xen/mdraid.rb'
 require File.join(AGENT_ROOT, 'standalone/dom_u.rb')
 require File.join(AGENT_ROOT, 'standalone/mac.rb')
 

@@ -3,7 +3,7 @@ require 'systemu'
 class Mdraid
   def self.list_volumes()
     Log4r::Logger['os'].debug('cat /proc/mdstat | grep "active raid1"')
-    `cat /proc/mdstat | grep "active raid1"`.map {|l| l.split(' ').first}
+    `cat /proc/mdstat | grep "active raid1"`.split("\n").map {|l| l.split(' ').first}
   end
 
   def self.list_disks()
