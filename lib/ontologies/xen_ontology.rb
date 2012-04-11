@@ -61,7 +61,7 @@ class XenOntology < Ontology::Base
     end
   end
 
-  def handle_message(message, kb)
+  def handle_message(message)
     case message.act
       when 'inform' then
         @engine.assert message.content if !@engine.query message.content
