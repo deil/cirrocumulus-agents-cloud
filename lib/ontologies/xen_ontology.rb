@@ -35,17 +35,13 @@ class XenOntology < Ontology::Base
 
       when 'query-ref' then
         msg = query(message.content)
-        msg.receiver = message.sender
         msg.ontology = self.name
-        msg.in_reply_to = message.reply_with
-        self.agent.send_message(msg)
+        self.agent.reply_to_message(msg, message)
 
       when 'query-if' then
         msg = query_if(message.content)
-        msg.receiver = message.sender
         msg.ontology = self.name
-        msg.in_reply_to = message.reply_with
-        self.agent.send_message(msg)
+        self.agent.reply_to_message(msg, message)
       when 'request' then
         handle_request(message)
       else
