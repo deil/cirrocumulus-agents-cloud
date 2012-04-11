@@ -162,18 +162,9 @@ class XenOntology < Ontology::Base
   # (running (guest ..))
   def handle_running_query(obj)
     params = Cirrocumulus::Message.parse_params(obj)
-    p params
 
-    obj.each do |param|
-      next if !param.is_a?(Array)
-
-      if param.first.is_a?(Symbol) && param.first == :guest
-        guest_id = param.second
-        return XenNode::is_guest_running?(guest_id)
-      end
-    end
-
-    false
+    return false if params[:running].blank?
+    return XenNode::is_guest_running?(params[:running][:guest])
   end
 
   def handle_request(message)
