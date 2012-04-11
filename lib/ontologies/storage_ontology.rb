@@ -37,19 +37,18 @@ class StorageOntology < Ontology::Base
 
   def handle_message(message, kb)
     case message.act
+      when 'inform'
+        @engine.assert message.content if !@engine.query message.content
+
       when 'query-ref'
-        msg             = query(message.content)
-        msg.receiver    = message.sender
-        msg.ontology    = self.name
-        msg.in_reply_to = message.reply_with
-        self.agent.send_message(msg)
+        msg = query(message.content)
+        msg.ontology = self.name
+        self.agent.reply_to_message(msg, message)
 
       when 'query-if'
-        msg             = query_if(message.content)
-        msg.receiver    = message.sender
-        msg.ontology    = self.name
-        msg.in_reply_to = message.reply_with
-        self.agent.send_message(msg)
+        msg = query_if(message.content)
+        msg.ontology = self.name
+        self.agent.reply_to_message(msg, message)
 
       when 'request'
         handle_request(message)

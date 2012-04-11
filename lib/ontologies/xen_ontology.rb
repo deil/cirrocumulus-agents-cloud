@@ -25,42 +25,9 @@ class XenOntology < Ontology::Base
 
     logger.info "State restored, made %d changes to node configuration" % [changes_made]
   end
+
+  protected
   
-  def handle_tick()
-    @tick_counter ||= 60 # init counter
-    
-    if @tick_counter == 55 # main loop
-      VirtualDisk.all.each do |disk|
-        #@engine.assert [:mdraid, disk.disk_number, :failed] if Mdraid.get_status(disk.disk_number) == :failed
-      end
-      
-      known_guests = DomUConfig.all.map {|domu| domu.name}
-      running_guests = XenNode.list_running_guests()
-      
-      known_guests.each do |guest|
-        if !running_guests.include? guest
-          @engine.assert [:guest, guest, :just_powered_off] if (@engine.query([:guest, guest, :running]) || !@engine.query([:guest, guest, :powered_off]))
-        else
-          @engine.assert [:guest, guest, :just_powered_on] if @engine.query([:guest, guest, :powered_off])
-        end
-      end
-
-=begin
-      running_guests.each do |guest|
-        if !known_guests.include? guest
-          @engine.assert [:guest, guest, :just_powered_on] if @engine.query([:guest, guest, :powered_off])
-        end
-      end
-=end
-    end
-    
-    if @tick_counter <= 0    
-      @tick_counter = 60
-    else
-      @tick_counter -= 1
-    end
-  end
-
   def handle_message(message)
     case message.act
       when 'inform' then
@@ -83,14 +50,47 @@ class XenOntology < Ontology::Base
         handle_request(message)
       else
         msg = Cirrocumulus::Message.new(nil, 'not-understood', [message.content, :not_supported])
-        msg.receiver = message.sender
         msg.ontology = self.name
-        msg.in_reply_to = message.reply_with
-        self.agent.send_message(msg)
+        self.agent.reply_to_message(msg, message)
     end
   end
 
-  private
+  def handle_tick()
+    return
+
+    @tick_counter ||= 60 # init counter
+
+    if @tick_counter == 55 # main loop
+      VirtualDisk.all.each do |disk|
+        #@engine.assert [:mdraid, disk.disk_number, :failed] if Mdraid.get_status(disk.disk_number) == :failed
+      end
+
+      known_guests = DomUConfig.all.map {|domu| domu.name}
+      running_guests = XenNode.list_running_guests()
+
+      known_guests.each do |guest|
+        if !running_guests.include? guest
+          @engine.assert [:guest, guest, :just_powered_off] if (@engine.query([:guest, guest, :running]) || !@engine.query([:guest, guest, :powered_off]))
+        else
+          @engine.assert [:guest, guest, :just_powered_on] if @engine.query([:guest, guest, :powered_off])
+        end
+      end
+
+=begin
+      running_guests.each do |guest|
+        if !known_guests.include? guest
+          @engine.assert [:guest, guest, :just_powered_on] if @engine.query([:guest, guest, :powered_off])
+        end
+      end
+=end
+    end
+
+    if @tick_counter <= 0
+      @tick_counter = 60
+    else
+      @tick_counter -= 1
+    end
+  end
 
   def discover_new_disks()
     logger.debug "Discovering running MD devices"

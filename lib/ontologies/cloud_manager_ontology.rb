@@ -31,10 +31,31 @@ class CloudManagerOntology < Ontology::Base
 
     @engine.retract [:just_started]
   end
-  
-  def handle_tick()
+
+  def query_xen_vds_state(vds)
+    saga = create_saga(QueryXenVdsStateSaga)
+    saga.start(vds, nil)
   end
 
+  def start_xen_vds(vds)
+    saga = create_saga(StartVdsSaga)
+    #saga.start(vds, nil)
+  end
+
+  def stop_xen_vds(vds)
+    #create_saga(StopVdsSaga).start(vds, nil)
+  end
+
+  def build_xen_vds(vds)
+    create_saga(BuildXenVdsSaga).start(vds)
+  end
+
+  def build_disk(disk)
+    create_saga(BuildVirtualDiskSaga).start(disk)
+  end
+
+  protected
+  
   def handle_message(message, kb)
     #p message
 
@@ -60,33 +81,12 @@ class CloudManagerOntology < Ontology::Base
         handle_request(message)
       else
         msg = Cirrocumulus::Message.new(nil, 'not-understood', [message.content, :not_supported])
-        msg.receiver = message.sender
         msg.ontology = self.name
-        msg.in_reply_to = message.reply_with
-        self.agent.send_message(msg)
+        self.agent.reply_to_message(msg, message)
     end
   end
 
-  def query_xen_vds_state(vds)
-    saga = create_saga(QueryXenVdsStateSaga)
-    saga.start(vds, nil)
-  end
-  
-  def start_xen_vds(vds)
-    saga = create_saga(StartVdsSaga)
-    #saga.start(vds, nil)
-  end
-  
-  def stop_xen_vds(vds)
-    #create_saga(StopVdsSaga).start(vds, nil)
-  end
-
-  def build_xen_vds(vds)
-    create_saga(BuildXenVdsSaga).start(vds)
-  end
-
-  def build_disk(disk)
-    create_saga(BuildVirtualDiskSaga).start(disk)
+  def handle_tick()
   end
 
   private
