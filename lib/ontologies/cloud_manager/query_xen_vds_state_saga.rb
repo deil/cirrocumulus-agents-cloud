@@ -17,7 +17,7 @@ class QueryXenVdsStateSaga < Saga
       when STATE_START then
         msg = Cirrocumulus::Message.new(nil, 'query-if', [:running, [:guest, vds.uid]]) # TODO: should be query-ref
         msg.ontology = 'cirrocumulus-xen'
-        msg.reply_with = id
+        msg.conversation_id = id
         @ontology.agent.send_message(msg)
         set_timeout(DEFAULT_TIMEOUT)
         change_state(STATE_WAITING_FOR_REPLY)
@@ -25,7 +25,7 @@ class QueryXenVdsStateSaga < Saga
       when STATE_WAITING_FOR_REPLY
         if message
           data = Cirrocumulus::Message.parse_params(message.content)
-          if data.include? :running
+          unless data[:running].blank?
             vds_uid = data[:running][:guest]
             if vds_uid != vds.uid
               error()

@@ -17,6 +17,8 @@ class XenOntology < Ontology::Base
   end
 
   def restore_state()
+    @engine.start()
+
     logger.info "Restoring previous state"
     @engine.assert [:just_started]
 

@@ -19,6 +19,8 @@ class StorageOntology < Ontology::Base
   end
 
   def restore_state()
+    @engine.start()
+
     logger.info "Restoring previous state"
     changes_made = 0
 

@@ -20,10 +20,11 @@ class CloudManagerOntology < Ontology::Base
     @engine.start()
     @engine.assert [:just_started]
 
-    VpsConfiguration.active.each do |vds|
+#    VpsConfiguration.active.each do |vds|
+    vds = VpsConfiguration.find_by_uid('96c79590c005012c9ad7001966a7ee21')
       @engine.assert [:vds, vds.uid, :state, :stopped]
       @engine.assert [:vds, vds.uid, :actual_state, :unknown]
-    end
+#    end
 
     VpsConfiguration.running.each do |vds|
       @engine.replace [:vds, vds.uid, :state, :CURRENT_STATE], :running
