@@ -13,7 +13,7 @@ class XenOntology < Ontology::Base
     super('cirrocumulus-xen', agent)
     logger.info "Starting XenOntology.."
     @engine = XenRuleset.new(self)
-    @tick_counter = 0
+    @tick_at = Time.now + 1.minute
   end
 
   def restore_state()
@@ -24,6 +24,16 @@ class XenOntology < Ontology::Base
 
     discover_new_disks()
     changes_made = shut_all_disks_down()
+
+    running_guests = XenNode::list_running_guests()
+    running_guests.each do |guest_id|
+      guest = XenNode::find(guest_id)
+      @engine.assert [:guest, guest_id, :cpu_time, guest.cpu_time]
+
+      guest.interfaces.each_with_index do |vif, idx|
+        @engine.assert [:guest, guest_id, :vif, idx, :rx, vif[:rx], :tx, vif[:tx]]
+      end
+    end
 
     logger.info "State restored, made %d changes to node configuration" % [changes_made]
   end
@@ -54,11 +64,10 @@ class XenOntology < Ontology::Base
   end
 
   def handle_tick()
-    return
+    return if Time.now < @tick_at
 
-    @tick_counter ||= 60 # init counter
+    collect_all_guests_stats()
 
-    if @tick_counter == 55 # main loop
       VirtualDisk.all.each do |disk|
         #@engine.assert [:mdraid, disk.disk_number, :failed] if Mdraid.get_status(disk.disk_number) == :failed
       end
@@ -81,13 +90,9 @@ class XenOntology < Ontology::Base
         end
       end
 =end
-    end
 
-    if @tick_counter <= 0
-      @tick_counter = 60
-    else
-      @tick_counter -= 1
-    end
+
+    @tick_at = @tick_at + 1.minute
   end
 
   def discover_new_disks()
@@ -115,6 +120,20 @@ class XenOntology < Ontology::Base
     end
 
     changes_made
+  end
+
+  def collect_all_guests_stats()
+    running_guests = XenNode::list_running_guests()
+    running_guests.each do |guest_id|
+      guest = XenNode::find(guest_id)
+      #@engine.assert [:guest, guest_id, :vcpus, guest.vcpus]
+      #@engine.assert [:guest, guest_id, :ram, guest.memory]
+      @engine.replace [:guest, guest_id, :cpu_time, :TIME], guest.cpu_time
+
+      guest.interfaces.each_with_index do |vif, idx|
+        @engine.replace [:guest, guest_id, :vif, idx, :rx, :RX, :tx, :TX], {:RX => vif[:rx], :TX => vif[:tx]}
+      end
+    end
   end
 
   def query(obj)
