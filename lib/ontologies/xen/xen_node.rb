@@ -36,11 +36,11 @@ class XenNode
       ('a'..'z').each do |x|
         stats = nil
         begin
-          stats = d.blockstats("xvd%s" % x)
+          stats = d.block_stats("xvd%s" % x)
         rescue; end
 
         begin
-          stats = d.blockstats("hd%s" % x)
+          stats = d.block_stats("hd%s" % x)
         rescue; end
 
         domain.block[x] = {
