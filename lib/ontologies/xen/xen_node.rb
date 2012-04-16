@@ -17,7 +17,7 @@ class XenNode
 
   def self.find(guest_id)
     if self.is_guest_running?(guest_id)
-      d = @@libvirt.lookup_domain_by_name(domain_id)
+      d = @@libvirt.lookup_domain_by_name(guest_id)
       d_info = d.info
       domain = LibvirtDomain.new(guest_id)
       domain.vcpus = d_info.nr_virt_cpu
