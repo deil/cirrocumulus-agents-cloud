@@ -1,5 +1,6 @@
 require 'systemu'
 require 'libvirt'
+require 'libvirt_domain.rb'
 
 class XenNode
   def self.list_running_guests()
@@ -12,6 +13,52 @@ class XenNode
     @@libvirt.lookup_domain_by_name(guest_id)
   rescue
     false
+  end
+
+  def self.find(guest_id)
+    if self.is_guest_running?(guest_id)
+      d = @@libvirt.lookup_domain_by_name(domain_id)
+      d_info = d.info
+      domain = LibvirtDomain.new(guest_id)
+      domain.vcpus = d_info.nr_virt_cpu
+      domain.memory = d_info.memory
+      domain.cpu_time = d_info.cpu_time
+
+      (0..3).each do |i|
+        begin
+          vif_name = "vif%d.%d" % [d.id, i]
+          vif_info = d.ifinfo(vif_nme)
+          domain.interfaces << {:tx => vif_info.tx_bytes, :rx => vif_info.rx_bytes}
+        rescue
+        end
+      end
+
+      ('a'..'z').each do |x|
+        begin
+          stats = d.blockstats "xvd%s" % x
+          domain.block["xvd%s" % x] = {
+              :rd_bytes => stats.rd_bytes,
+              :rd_req => stats.rd_req,
+              :wr_bytes => stats.wr_bytes,
+              :wr_req => stats.wr_req
+          }
+        rescue; end
+
+        begin
+          stats = d.blockstats = "hd%s" % x
+          domain.block["hd%s" % x] = {
+              :rd_bytes => stats.rd_bytes,
+              :rd_req => stats.rd_req,
+              :wr_bytes => stats.wr_bytes,
+              :wr_req => stats.wr_req
+          }
+        rescue; end
+      end
+
+      return domain
+    end
+
+    nil
   end
 
   def self.total_vcpus
