@@ -1,6 +1,6 @@
 require 'systemu'
 require 'libvirt'
-require 'libvirt_domain.rb'
+require_relative 'libvirt_domain.rb'
 
 class XenNode
   def self.list_running_guests()
