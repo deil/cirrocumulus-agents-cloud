@@ -34,25 +34,21 @@ class XenNode
       end
 
       ('a'..'z').each do |x|
+        stats = nil
         begin
-          stats = d.blockstats "xvd%s" % x
-          domain.block["xvd%s" % x] = {
-              :rd_bytes => stats.rd_bytes,
-              :rd_req => stats.rd_req,
-              :wr_bytes => stats.wr_bytes,
-              :wr_req => stats.wr_req
-          }
+          stats = d.blockstats("xvd%s" % x)
         rescue; end
 
         begin
-          stats = d.blockstats = "hd%s" % x
-          domain.block["hd%s" % x] = {
-              :rd_bytes => stats.rd_bytes,
-              :rd_req => stats.rd_req,
-              :wr_bytes => stats.wr_bytes,
-              :wr_req => stats.wr_req
-          }
+          stats = d.blockstats("hd%s" % x)
         rescue; end
+
+        domain.block[x] = {
+            :rd_bytes => stats.rd_bytes,
+            :rd_req => stats.rd_req,
+            :wr_bytes => stats.wr_bytes,
+            :wr_req => stats.wr_req
+        } if stats
       end
 
       return domain
