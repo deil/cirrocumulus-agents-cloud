@@ -27,7 +27,7 @@ class XenNode
       (0..3).each do |i|
         begin
           vif_name = "vif%d.%d" % [d.id, i]
-          vif_info = d.ifinfo(vif_nme)
+          vif_info = d.ifinfo(vif_name)
           domain.interfaces << {:tx => vif_info.tx_bytes, :rx => vif_info.rx_bytes}
         rescue
         end
