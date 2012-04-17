@@ -22,7 +22,7 @@ class XenNode
       domain = LibvirtDomain.new(guest_id)
       domain.vcpus = d_info.nr_virt_cpu
       domain.memory = d_info.memory
-      domain.cpu_time = (100 * (d_info.cpu_time / 1000000000)).round()/100.0
+      domain.cpu_time = (d_info.cpu_time / 10000000).round()/100.0
 
       (0..3).each do |i|
         begin

@@ -43,7 +43,7 @@ class XenOntology < Ontology::Base
   def handle_message(message, kb)
     case message.act
       when 'inform' then
-        @engine.assert message.content if !@engine.query message.content
+        #@engine.assert message.content if !@engine.query message.content
 
       when 'query-ref' then
         msg = query(message.content)
@@ -131,13 +131,13 @@ class XenOntology < Ontology::Base
       @engine.replace [:guest, guest_id, :cpu_time, :TIME], guest.cpu_time
 
       msg = Cirrocumulus::Message.new(nil, 'inform', [:guest, [:uid, guest_id], [:cpu_time, guest.cpu_time]])
-      msg.ontology = self.name
+      msg.ontology = 'cirrocumulus-cloud'
       self.agent.send_message(msg)
 
       guest.interfaces.each_with_index do |vif, idx|
         @engine.replace [:guest, guest_id, :vif, idx, :rx, :RX, :tx, :TX], {:RX => vif[:rx], :TX => vif[:tx]}
         msg = Cirrocumulus::Message.new(nil, 'inform', [:guest, [:uid, guest_id], [:vif, idx], [:rx, vif[:rx]], [:tx, vif[:tx]]])
-        msg.ontology = 'cirrocumulus-xen'
+        msg.ontology = 'cirrocumulus-cloud'
         self.agent.send_message(msg)
       end
     end

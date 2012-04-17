@@ -61,7 +61,7 @@ class CloudManagerOntology < Ontology::Base
 
     case message.act
       when 'inform' then
-        @engine.assert message.content if !@engine.query message.content
+        @engine.assert message.content if !process_received_statistics(message.content) && !@engine.query(message.content)
 
       when 'query-ref' then
         msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [query_ref(message.content)]])
@@ -210,6 +210,16 @@ class CloudManagerOntology < Ontology::Base
     disk = VdsDisk.create(disk_size)
     @engine.assert [:virtual_disk, disk.number, :actual_state, :created]
     disk.number
+  end
+
+  def process_received_statistics(obj)
+    params = Cirrocumulus::Message.parse_params(message.content)
+
+    p params
+
+    true
+  rescue Exception => ex
+    false
   end
 
 end
