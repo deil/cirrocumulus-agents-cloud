@@ -77,9 +77,9 @@ class XenOntology < Ontology::Base
 
       known_guests.each do |guest|
         if !running_guests.include? guest
-          @engine.assert [:guest, guest, :just_powered_off] if (@engine.query([:guest, guest, :running]) || !@engine.query([:guest, guest, :powered_off]))
+          #@engine.assert [:guest, guest, :just_powered_off] if (@engine.query([:guest, guest, :running]) || !@engine.query([:guest, guest, :powered_off]))
         else
-          @engine.assert [:guest, guest, :just_powered_on] if @engine.query([:guest, guest, :powered_off])
+          #@engine.assert [:guest, guest, :just_powered_on] if @engine.query([:guest, guest, :powered_off])
         end
       end
 
@@ -130,8 +130,15 @@ class XenOntology < Ontology::Base
       #@engine.assert [:guest, guest_id, :ram, guest.memory]
       @engine.replace [:guest, guest_id, :cpu_time, :TIME], guest.cpu_time
 
+      msg = Cirocumulus::Message.new(nil, 'inform', [:guest, guest_id, :cpu_time, guest.cpu_time])
+      msg.ontology = 'cirrocumulus-xen'
+      self.agent.send_message(msg)
+
       guest.interfaces.each_with_index do |vif, idx|
         @engine.replace [:guest, guest_id, :vif, idx, :rx, :RX, :tx, :TX], {:RX => vif[:rx], :TX => vif[:tx]}
+        msg = Cirrocumulus::Message.new(nil, 'inform', [:guest, guest_id, :vif, idx, :rx, vif[:rx], :tx, vif[:tx]])
+        msg.ontology = 'cirrocumulus-xen'
+        self.agent.send_message(msg)
       end
     end
   end
