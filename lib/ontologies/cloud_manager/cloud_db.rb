@@ -199,3 +199,18 @@ ActiveRecord::Base.establish_connection(
   :adapter => 'sqlite3',
   :database => "#{AGENT_ROOT}/databases/cloud.sqlite"
 )
+
+class VdsStatistics
+  def initialize(vds_uid)
+    @vds_uid = vds_uid
+  end
+
+  def store_cpu_time(cpu_time)
+  end
+
+  def store_wan_stats(tx, rx)
+  end
+
+  def store_lan_stats(tx, rx)
+  end
+end

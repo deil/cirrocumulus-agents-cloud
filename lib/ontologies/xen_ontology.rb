@@ -389,25 +389,19 @@ class XenOntology < Ontology::Base
         if Mdraid.check_aoe(disk_number).size == 0
           msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:no_visible_exports]])
           msg.ontology = self.name
-          msg.receiver = message.sender
-          msg.in_reply_to = message.reply_with
+          self.agent.reply_to_message(msg, message)
           self.agent.send_message(msg)
         else
           if Mdraid.assemble(disk_number)
             disk = VirtualDisk.new(disk_number)
             disk.save('cirrocumulus', message.sender)
-
             msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
             msg.ontology = self.name
-            msg.receiver = message.sender
-            msg.in_reply_to = message.reply_with
-            self.agent.send_message(msg)
+            self.agent.reply_to_message(msg, message)
           else
             msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
             msg.ontology = self.name
-            msg.receiver = message.sender
-            msg.in_reply_to = message.reply_with
-            self.agent.send_message(msg)
+            self.agent.reply_to_message(msg, message)
           end
         end
       else

@@ -19,7 +19,7 @@ class QueryXenVdsStateSaga < Saga
         msg.ontology = 'cirrocumulus-xen'
         msg.reply_with = id
         @ontology.agent.send_message(msg)
-        set_timeout(DEFAULT_TIMEOUT)
+        set_timeout(LONG_TIMEOUT)
         change_state(STATE_WAITING_FOR_REPLY)
 
       when STATE_WAITING_FOR_REPLY
@@ -31,12 +31,14 @@ class QueryXenVdsStateSaga < Saga
               error()
             else
               running_on = message.sender
+              Log4r::Logger['cirrocumulus'].info "VDS #{vds.uid} is running on #{running_on}"
               @ontology.engine.assert [:vds, vds.uid, :running_on, running_on]
               @ontology.engine.replace [:vds, vds.uid, :actual_state, :STATE], :running
               finish()
             end
           end
         else
+          Log4r::Logger['cirrocumulus'].info "VDS #{vds.uid} is stopped"
           @ontology.engine.replace [:vds, vds.uid, :actual_state, :STATE], :stopped
           finish()
         end

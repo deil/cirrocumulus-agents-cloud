@@ -14,7 +14,7 @@ class CloudRuleset < RuleEngine::Base
   rule 'unknown_vds_state', [ [:vds, :VDS, :actual_state, :unknown] ] do |engine, params|
     vds_uid = params[:VDS]
 
-    Log4r::Logger['kb'].info "Need to query VDS #{vds_uid} state"
+    Log4r::Logger['kb'].debug "VDS #{vds_uid} state is unknown, must query"
     vds = VpsConfiguration.find_by_uid(vds_uid)
     if vds.vds_type == "xen"
       engine.ontology.query_xen_vds_state(vds)
@@ -32,7 +32,7 @@ class CloudRuleset < RuleEngine::Base
     matched_nodes = engine.match [:vds, vds, :running_on, :NODE]
     matched_nodes.each {|match| engine.retract [:vds, vds, :running_on, match[:NODE]]}
 
-    Log4r::Logger['cirrocumulus'].info "Xen VDS #{vds} is powered off, but should be running"
+    Log4r::Logger['cirrocumulus'].info "VDS #{vds} state is: stopped, should be: running"
     engine.ontology.start_xen_vds(VpsConfiguration.find_by_uid(vds))
   end
 

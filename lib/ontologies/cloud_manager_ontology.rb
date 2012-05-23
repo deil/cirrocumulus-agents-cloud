@@ -7,6 +7,7 @@ require File.join(AGENT_ROOT, 'ontologies/cloud_manager/create_xen_vds_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/start_vds_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/stop_vds_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/query_xen_vds_state_saga.rb')
+require_relative 'cloud_manager/reboot_xen_vds_saga.rb'
 
 class CloudManagerOntology < Ontology::Base
   attr_reader :engine
@@ -39,7 +40,7 @@ class CloudManagerOntology < Ontology::Base
 
   def start_xen_vds(vds)
     saga = create_saga(StartVdsSaga)
-    #saga.start(vds, nil)
+    saga.start(vds, nil)
   end
 
   def stop_xen_vds(vds)
@@ -94,21 +95,27 @@ class CloudManagerOntology < Ontology::Base
 
     if query == :state
       object = params[query]
-      p object
 
       if object.include? :vds
         vds_uid = object[:vds][:uid]
-        matched_data = @engine.match [:vds, vds_uid, :actual_state, :STATE]
-        if matched_data.empty?
-          result = :vds_not_found
+        vds = VpsConfiguration.find_by_uid(vds_uid)
+
+        if vds
+          matched_data = @engine.match [:vds, vds_uid, :actual_state, :STATE]
+          if matched_data.empty?
+            result = :unknown
+          else
+            vds_state = matched_data.first
+            result = vds_state[:STATE]
+          end
         else
-          vds_state = matched_data.first
-          result = vds_state[:STATE]
+          result = :vds_not_found
         end
       end
     end
 
-    p result
+    Log4r::Logger['agent'].info "Query: %s, result: %s" % [params.inspect, result]
+
     result
   end
 
@@ -147,35 +154,22 @@ class CloudManagerOntology < Ontology::Base
   end
 
   # (reboot (vds (uid ...)))
-  def handle_reboot_request(obj, message)
-    if obj.first == :guest
-      guest_id = nil
-      obj.each do |param|
-        if param.is_a?(Array) && param.first == :id
-          guest_id = param.second
-        end
-      end
+  def handle_reboot_request(obj, original_message)
+    if obj.include? :vds
+      vds = obj[:vds]
+      vds_uid = vds[:uid]
 
-      if XenNode.is_guest_running?(guest_id)
-        if XenNode.reboot_guest(guest_id)
-          msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
-          msg.ontology = self.name
-          msg.receiver = message.sender
-          msg.in_reply_to = message.reply_with
-          self.agent.send_message(msg)
-        else
-          msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
-          msg.ontology = self.name
-          msg.receiver = message.sender
-          msg.in_reply_to = message.reply_with
-          self.agent.send_message(msg)
-        end
-      else
-        msg = Cirrocumulus::Message.new(nil, 'refuse', [message.content, [:guest_not_found]])
+      node = @engine.match [:vds, vds_uid, :running_on, :NODE]
+      if node.empty?
+        context = original_message.context()
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [original_message.content, [:vds_not_running]])
         msg.ontology = self.name
-        msg.receiver = message.sender
-        msg.in_reply_to = message.reply_with
+        msg.receiver = context.sender
+        msg.in_reply_to = context.reply_with
         self.agent.send_message(msg)
+      else
+        saga = create_saga(RebootXenVdsSaga)
+        saga.start(vds_uid, original_message)
       end
     end
   end
@@ -213,9 +207,31 @@ class CloudManagerOntology < Ontology::Base
   end
 
   def process_received_statistics(obj)
-    params = Cirrocumulus::Message.parse_params(message.content)
+    params = Cirrocumulus::Message.parse_params(obj)
 
-    p params
+    return false if params[:guest].blank?
+    guest = params[:guest]
+    return false if guest[:uid].blank?
+
+    stats = VdsStatistics.new(guest[:uid])
+
+    if guest.keys.include?(:cpu_time)
+      stats.store_cpu_time(guest[:cpu_time].to_f)
+    end
+
+    if guest.keys.include?(:vif)
+      vif_num = guest[:vif].to_i
+      tx = guest[:tx].to_i
+      rx = guest[:rx].to_i
+
+      case vif_num
+        when 0
+          stats.store_wan_stats(tx, rx)
+
+        when 1
+          stats.store_lan_stats(tx, rx)
+      end
+    end
 
     true
   rescue Exception => ex

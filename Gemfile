@@ -1,6 +1,6 @@
 source :gemcutter
 
-gem 'cirrocumulus', '~>0.6.0'
+gem 'cirrocumulus'
 gem 'activerecord', '~>2.3.11'
 gem 'sqlite3'
 
