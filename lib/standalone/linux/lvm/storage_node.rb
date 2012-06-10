@@ -36,7 +36,7 @@ class StorageNode
   end
 
   def self.volume_size(disk_number)
-    _, res = systemu("lvs --units k #{VOL_NAME}/vd%d" % [disk_number])
+    _, res = systemu("lvs --units m #{VOL_NAME}/vd%d" % [disk_number])
     lines  = res.split("\n")
     return 0 if lines.size() < 2
 

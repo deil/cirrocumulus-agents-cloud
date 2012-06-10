@@ -393,6 +393,7 @@ class XenOntology < Ontology::Base
           self.agent.send_message(msg)
         else
           if Mdraid.assemble(disk_number)
+            p message
             disk = VirtualDisk.new(disk_number)
             disk.save('cirrocumulus', message.sender)
             msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])

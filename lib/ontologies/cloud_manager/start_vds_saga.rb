@@ -123,12 +123,13 @@ class StartVdsSaga < Saga
             end
 
             change_state(STATE_ACTIVATING_VIRTUAL_DISKS)
-            set_timeout(DEFAULT_TIMEOUT)
+            set_timeout(LONG_TIMEOUT)
           end
         end
 
       when STATE_ACTIVATING_VIRTUAL_DISKS
         if message
+          p message
           if message.act == 'inform' && message.sender == @hosts[@selected_host[:index]][:agent]
             params = Cirrocumulus::parse_params(message.content)
             p params
