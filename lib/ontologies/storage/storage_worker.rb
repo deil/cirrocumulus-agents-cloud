@@ -23,7 +23,7 @@ class StorageWorker
       state = VirtualDiskState.find_by_disk_number(disk_number)
       state = VirtualDiskState.new(disk_number, true) unless state
       state.is_up = true
-      state.save('cirrocumulus', message.sender)
+      state.save('cirrocumulus', origin)
 
       return :action => :inform, :reason => :finished
     else
