@@ -40,7 +40,7 @@ class CloudManagerOntology < Ontology::Base
 
   def start_xen_vds(vds)
     saga = create_saga(StartVdsSaga)
-    saga.start(vds, nil)
+    saga.start(vds, nil) if vds.uid == "048f19209e9b11de8a390800200c9a66"
   end
 
   def stop_xen_vds(vds)

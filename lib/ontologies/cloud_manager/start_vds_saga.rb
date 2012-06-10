@@ -131,7 +131,7 @@ class StartVdsSaga < Saga
         if message
           p message
           if message.act == 'inform' && message.sender == @hosts[@selected_host[:index]][:agent]
-            params = Cirrocumulus::parse_params(message.content)
+            params = Cirrocumulus::Message.parse_params(message.content)
             p params
             # (start (disk (disk_number ..))) (finished)
             disk_number = message.content[0][1][1][1].to_i

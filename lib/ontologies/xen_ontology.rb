@@ -1,14 +1,16 @@
 require 'cirrocumulus/saga'
 require File.join(AGENT_ROOT, 'config/xen_config.rb')
-require File.join(AGENT_ROOT, 'ontologies/xen/xen_db.rb')
-require File.join(AGENT_ROOT, 'ontologies/xen/xen_ruleset.rb')
-require File.join(AGENT_ROOT, 'ontologies/xen/xen_node.rb')
-require File.join(AGENT_ROOT, 'ontologies/xen/start_guest_saga.rb')
+require_relative 'xen/xen_db.rb'
+require_relative 'xen/xen_ruleset.rb'
+require_relative 'xen/xen_node.rb'
+require_relative 'xen/start_guest_saga.rb'
 require_relative 'xen/mdraid.rb'
 require File.join(AGENT_ROOT, 'standalone/dom_u.rb')
 require File.join(AGENT_ROOT, 'standalone/mac.rb')
 
 class XenOntology < Ontology::Base
+  attr_reader :engine
+
   def initialize(agent)
     super('cirrocumulus-xen', agent)
     logger.info "Starting XenOntology.."
