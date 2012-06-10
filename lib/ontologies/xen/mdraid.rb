@@ -23,7 +23,7 @@ class Mdraid
     Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
     return :stopped unless err.blank?
-    return :active if out.include? 'clean'
+    return :active if out.include?('clean') || out.include?('active')
     :failed
   end
 
