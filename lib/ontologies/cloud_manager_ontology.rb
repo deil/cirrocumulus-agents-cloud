@@ -1,7 +1,8 @@
 require 'cirrocumulus/saga'
-require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_db-o1.rb')
-require File.join(AGENT_ROOT, 'ontologies/cloud_manager/cloud_ruleset.rb')
-require File.join(AGENT_ROOT, 'ontologies/cloud_manager/build_virtual_disk_saga.rb')
+require_relative 'cloud_manager/cloud_db-o1.rb'
+require_relative 'cloud_manager/cloud_ruleset.rb'
+require_relative 'cloud_manager/build_virtual_disk_saga.rb'
+require_relative 'cloud_manager/delete_virtual_disk_saga.rb'
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/build_xen_vds_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/create_xen_vds_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/start_vds_saga.rb')
@@ -20,22 +21,11 @@ class CloudManagerOntology < Ontology::Base
   def restore_state()
     @engine.start()
     @engine.assert [:just_started]
-
-    VpsConfiguration.active.each do |vds|
-      @engine.assert [:vds, vds.uid, :state, :stopped]
-      @engine.assert [:vds, vds.uid, :actual_state, :unknown]
-    end
-
-    VpsConfiguration.running.each do |vds|
-      @engine.replace [:vds, vds.uid, :state, :CURRENT_STATE], :running
-    end
-
-    @engine.retract [:just_started]
   end
 
-  def query_xen_vds_state(vds)
+  def query_xen_vds_state(vds_uid)
     saga = create_saga(QueryXenVdsStateSaga)
-    saga.start(vds, nil)
+    saga.start(vds_uid, nil)
   end
 
   def start_xen_vds(vds)
@@ -44,7 +34,7 @@ class CloudManagerOntology < Ontology::Base
   end
 
   def stop_xen_vds(vds)
-    #create_saga(StopVdsSaga).start(vds, nil)
+    create_saga(StopVdsSaga).start(vds, nil)
   end
 
   def build_xen_vds(vds)
@@ -54,6 +44,10 @@ class CloudManagerOntology < Ontology::Base
   def build_disk(disk)
     create_saga(BuildVirtualDiskSaga).start(disk)
   end
+  
+  def start_delete_virtual_disk_saga(disk_number)
+    create_saga(DeleteVirtualDiskSaga).start(disk_number)
+  end
 
   protected
   
@@ -62,7 +56,15 @@ class CloudManagerOntology < Ontology::Base
 
     case message.act
       when 'inform' then
-        @engine.assert message.content if !process_received_statistics(message.content) && !@engine.query(message.content)
+        return if process_received_statistics(message.content)
+        return if @engine.query(message.content)
+        if message.content.first == :vds && message.content[2] == :state
+          vds_id = message.content[1]
+          @engine.replace [:vds, vds_id, :state, :STATE], message.content[3]
+          return
+        end
+
+        @engine.assert message.content
 
       when 'query-ref' then
         msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [query_ref(message.content)]])
@@ -150,6 +152,8 @@ class CloudManagerOntology < Ontology::Base
       handle_reboot_request(params[action], message)
     elsif action == :create
       handle_create_request(params[action], message)
+    elsif action == :delete
+      handle_delete_request(params[action], message)
     end
   end
 
@@ -176,8 +180,6 @@ class CloudManagerOntology < Ontology::Base
 
   # (create (vds (ram ..)))
   def handle_create_request(obj, original_message)
-    p obj
-
     if obj.include? :vds
       vds_config = obj[:vds]
       if vds_config[:type] == :xen
@@ -204,6 +206,26 @@ class CloudManagerOntology < Ontology::Base
     disk = VdsDisk.create(disk_size)
     @engine.assert [:virtual_disk, disk.number, :actual_state, :created]
     disk.number
+  end
+
+  def handle_delete_request(obj, original_message)
+    if obj.include?(:disk)
+      disk_number = obj[:disk][:disk_number]
+      disk = VdsDisk.find_by_number(disk_number)
+
+      if disk
+        @engine.replace [:virtual_disk, disk_number, :state, :STATE], :inactive
+        msg = Cirrocumulus::Message.new(nil, 'inform', [original_message.content, [:finished]])
+      else
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [original_message.content, [:not_exists]])
+      end
+
+      msg.ontology = 'cirrocumulus-cloud'
+      self.agent.reply_to_message(msg, original_message)
+    end
+  end
+  
+  def delete_virtual_disk(obj)
   end
 
   def process_received_statistics(obj)

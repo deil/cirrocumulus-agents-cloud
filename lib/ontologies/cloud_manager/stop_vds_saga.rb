@@ -15,6 +15,9 @@ class StopVdsSaga < Saga
     @message = message
     
     Log4r::Logger['agent'].info "[#{id}] Stopping VDS #{vds.uid} (#{vds.id})"
+
+    @vds.stop()
+
     @ontology.engine.replace [:vds, vds.uid, :actual_state, :RUNNING], :stopping
     handle()
   end

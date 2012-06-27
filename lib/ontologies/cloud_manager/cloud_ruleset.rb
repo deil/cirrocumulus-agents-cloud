@@ -5,7 +5,41 @@ class CloudRuleset < RuleEngine::Base
 
   def initialize(ontology)
     super()
+
+    info("Created new CloudRuleset instance.")
     @ontology = ontology
+  end
+
+  def info(msg)
+    Log4r::Logger['kb'].info(msg)
+  end
+
+  def error(msg)
+    Log4r::Logger['kb'].warn(msg)
+  end
+
+  #
+  # Called on initialization. Connect to backend DB, grab all active VDSes and query their states
+  #
+  rule 'init', [ [:just_started] ] do |engine, params|
+    engine.info("Collecting information about all active virtual servers..")
+    engine.retract [:just_started]
+
+    VdsDisk.all.each do |disk|
+      engine.assert [:virtual_disk, disk.number, :state, :active]
+      engine.assert [:virtual_disk, disk.number, :actual_state, :clean]
+    end
+
+    VpsConfiguration.active.each do |vds|
+      if vds.is_running?
+        engine.assert [:vds, vds.uid, :state, :running]
+      else
+        engine.assert [:vds, vds.uid, :state, :stopped]
+      end
+
+      engine.assert [:vds, vds.uid, :actual_state, :unknown]
+    end
+
   end
 
   #
@@ -14,12 +48,13 @@ class CloudRuleset < RuleEngine::Base
   rule 'unknown_vds_state', [ [:vds, :VDS, :actual_state, :unknown] ] do |engine, params|
     vds_uid = params[:VDS]
 
-    Log4r::Logger['kb'].debug "VDS #{vds_uid} state is unknown, must query"
+    engine.info("Must query VDS #{vds_uid} state (current: unknown)")
+
     vds = VpsConfiguration.find_by_uid(vds_uid)
-    if vds.vds_type == "xen"
-      engine.ontology.query_xen_vds_state(vds)
+    if vds
+      engine.ontology.query_xen_vds_state(vds.uid)
     else
-      Log4r::Logger['cirrocumulus'].warn "VDS #{vds_uid} type is not supported"
+      engine.error("!! VDS #{vds_uid} does not exist")
     end
   end
 
@@ -114,5 +149,31 @@ class CloudRuleset < RuleEngine::Base
     Log4r::Logger['cirrocumulus'].info "Building Virtual Disk #{disk_number}"
     disk = VdsDisk.find_by_number(disk_number)
     engine.ontology.build_disk(disk)
+  end
+  
+  #
+  # Deactivate virtual disk (shutdown all MD devices, remove exports and delete volumes on both storages)
+  #
+  rule 'deactivate_virtual_disk', [ [:virtual_disk, :NUMBER, :state, :inactive], [:virtual_disk, :NUMBER, :actual_state, :clean] ] do |engine, params|
+    disk_number = params[:NUMBER]
+    disk = VdsDisk.find_by_number(disk_number)
+    if disk
+      engine.info "Deactivating Virtual Disk #{disk_number}"
+      engine.ontology.start_delete_virtual_disk_saga(disk_number)
+    else
+    end
+  end
+  
+  #
+  # Delete information about inactive virtual disk from backend DB
+  #
+  rule 'delete_virtual_disk', [ [:virtual_disk, :NUMBER, :state, :inactive], [:virtual_disk, :NUMBER, :actual_state, :inactive] ] do |engine, params|
+    disk_number = params[:NUMBER]
+    engine.info "Deleting information about Virtual Disk #{disk_number}"
+    disk = VdsDisk.find_by_number(disk_number)
+    disk.delete()
+
+    engine.retract [:virtual_disk, disk_number, :state, :inactive]
+    engine.retract [:virtual_disk, disk_number, :actual_state, :inactive]
   end
 end

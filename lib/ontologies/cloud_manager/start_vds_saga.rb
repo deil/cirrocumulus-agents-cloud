@@ -13,7 +13,8 @@ class StartVdsSaga < Saga
   def start(vds, message)
     @vds = vds
     @message = message
-    
+
+    @vds.start()
     Log4r::Logger['agent'].info "[#{id}] Starting VDS #{vds.uid} (#{vds.id}) [RAM=#{vds.current.ram}Mb]"
     @ontology.engine.replace [:vds, vds.uid, :actual_state, :STOPPED], :starting
     handle() if vds.uid == '048f19209e9b11de8a390800200c9a66'
@@ -132,7 +133,7 @@ class StartVdsSaga < Saga
           p message
           if message.act == 'inform' && message.sender == @hosts[@selected_host[:index]][:agent]
             params = Cirrocumulus::Message.parse_params(message.content)
-            p params
+            #p params
             # (start (disk (disk_number ..))) (finished)
             disk_number = message.content[0][1][1][1].to_i
             @need_to_activate.each do |disk_state|
@@ -153,12 +154,14 @@ class StartVdsSaga < Saga
         end
 
       when STATE_STARTING_GUEST
+        Log4r::Logger['agent'].info "[#{id}] Starting up guest.."
+
         guest_parameters = [
             :guest,
             [:id, vds.uid],
             [:hvm, vds.hvm? ? 1 : 0],
             [:ram, vds.current.ram],
-            [:vcpus, 1],
+            [:vcpus, 4],
             [:weight, vds.current.ram],
             [:cap, 0],
             [:vnc, 5900 + vds.id],

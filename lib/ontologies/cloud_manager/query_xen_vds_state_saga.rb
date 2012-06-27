@@ -1,21 +1,24 @@
+# Query VDS state.
+# Saga implementing discovery of VDS state. Sends a query to all nodes and processes their replies.
 class QueryXenVdsStateSaga < Saga
   STATE_WAITING_FOR_REPLY = 2
 
-  attr_reader :vds
+  attr_reader :vds_uid
 
-  def start(vds, message)
-    @vds = vds
+  # Start this saga. Must pass an UID of requested VDS
+  def start(vds_uid, message)
+    @vds_uid = vds_uid
     @message = message
 
-    Log4r::Logger['agent'].info "[#{id}] Querying Xen VDS #{vds.uid} (#{vds.id}) state"
-    @ontology.engine.replace [:vds, vds.uid, :actual_state, :STATE], :querying
+    Log4r::Logger['kb'].info "++ Starting saga #{id}: Query VDS #{vds_uid} state"
+    @ontology.engine.replace [:vds, vds_uid, :actual_state, :STATE], :querying
     handle()
   end
 
   def handle(message = nil)
     case @state
       when STATE_START then
-        msg = Cirrocumulus::Message.new(nil, 'query-if', [:running, [:guest, vds.uid]]) # TODO: should be query-ref
+        msg = Cirrocumulus::Message.new(nil, 'query-if', [:running, [:guest, self.vds_uid]]) # TODO: should be query-ref
         msg.ontology = 'cirrocumulus-xen'
         msg.reply_with = id
         @ontology.agent.send_message(msg)
@@ -27,19 +30,19 @@ class QueryXenVdsStateSaga < Saga
           data = Cirrocumulus::Message.parse_params(message.content)
           unless data[:running].blank?
             vds_uid = data[:running][:guest]
-            if vds_uid != vds.uid
+            if vds_uid != self.vds_uid
               error()
             else
               running_on = message.sender
-              Log4r::Logger['cirrocumulus'].info "VDS #{vds.uid} is running on #{running_on}"
-              @ontology.engine.assert [:vds, vds.uid, :running_on, running_on]
-              @ontology.engine.replace [:vds, vds.uid, :actual_state, :STATE], :running
+              Log4r::Logger['kb'].info "=> VDS #{self.vds_uid} is running on #{running_on}"
+              @ontology.engine.assert [:vds, self.vds_uid, :running_on, running_on]
+              @ontology.engine.replace [:vds, self.vds_uid, :actual_state, :STATE], :running
               finish()
             end
           end
         else
-          Log4r::Logger['cirrocumulus'].info "VDS #{vds.uid} is stopped"
-          @ontology.engine.replace [:vds, vds.uid, :actual_state, :STATE], :stopped
+          Log4r::Logger['kb'].info "=> VDS #{self.vds_uid} is stopped"
+          @ontology.engine.replace [:vds, self.vds_uid, :actual_state, :STATE], :stopped
           finish()
         end
     end

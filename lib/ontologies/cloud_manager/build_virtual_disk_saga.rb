@@ -65,7 +65,7 @@ class BuildVirtualDiskSaga < Saga
             msg.conversation_id = @id
             @ontology.agent.send_message(msg)
             change_state(STATE_CREATING_DISK)
-            set_timeout(DEFAULT_TIMEOUT)
+            set_timeout(LONG_TIMEOUT)
           else
             notify_failure(:build_failed)
             error()
