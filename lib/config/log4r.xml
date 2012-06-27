@@ -1,4 +1,19 @@
 <log4r_config>
+  <outputter name="agent_log" type="FileOutputter" level="ALL">
+    <filename>logs/agent.log</filename>
+  </outputter>
+
+  <outputter name="ruler_log" type="FileOutputter" level="INFO">
+    <filename>logs/ruler.log</filename>
+  </outputter>
+
+  <outputter name="kb_log" type="FileOutputter" level="INFO">
+    <formatter type="Log4r::PatternFormatter">
+      <pattern>[%5l %d] %M</pattern>
+    </formatter>
+    <filename>logs/kb.log</filename>
+  </outputter>
+
   <outputter name="console" type="StdoutOutputter" level="INFO">
     <formatter type="Log4r::PatternFormatter">
       <pattern>=>[%5l %d] %C: %M</pattern>
@@ -25,19 +40,20 @@
     <outputter>console</outputter>
   </logger>
   <logger name="agent" level="ALL" additive="false" trace="false">
-	  <outputter>console</outputter>
-    <outputter>decisions_file</outputter>
+    <outputter>agent_log</outputter>
   </logger>
   <logger name="cirrocumulus" level="ALL" additive="false" trace="false">
 	  <outputter>console</outputter>
     <outputter>decisions_file</outputter>
     <outputter>file</outputter>
   </logger>
-  <logger name="kb" level="DEBUG" additive="false" trace="false">
-	  <outputter>console</outputter>
-    <outputter>decisions_file</outputter>
+
+  <logger name="kb" level="INFO" additive="false" trace="false">
+    <outputter>kb_log</outputter>
+    <outputter>agent_log</outputter>
   </logger>
+
   <logger name="kb_trace" level="DEBUG" additive="false" trace="false">
-    <outputter>file</outputter>
+    <outputter>kb_log</outputter>
   </logger>
 </log4r_config>
