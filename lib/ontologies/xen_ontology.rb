@@ -446,9 +446,7 @@ class XenOntology < Ontology::Base
 
             msg = Cirrocumulus::Message.new(nil, 'inform', [message.content, [:finished]])
             msg.ontology = self.name
-            msg.receiver = message.sender
-            msg.in_reply_to = message.reply_with
-            self.agent.send_message(msg)
+            self.agent.reply_to_message(msg, message)
           else
             msg = Cirrocumulus::Message.new(nil, 'failure', [message.content, [:unknown_reason]])
             msg.ontology = self.name
