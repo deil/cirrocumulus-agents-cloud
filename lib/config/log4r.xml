@@ -1,5 +1,8 @@
 <log4r_config>
   <outputter name="agent_log" type="FileOutputter" level="ALL">
+    <formatter type="Log4r::PatternFormatter">
+      <pattern>[%5l %d] %M</pattern>
+    </formatter>
     <filename>logs/agent.log</filename>
   </outputter>
 
