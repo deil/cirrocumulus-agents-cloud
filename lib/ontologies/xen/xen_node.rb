@@ -129,16 +129,18 @@ class XenNode
   end
   
   def self.attach_disk(domU, disk_number, block_device)
-    cmd = "virsh attach-disk #{domU} /dev/md#{disk_number} #{block_device}"
-    puts cmd
+    cmd = "xm block-attach #{domU} phy:/dev/md#{disk_number} #{block_device} w"
+    Log4r::Logger['agent'].debug "Executing command: #{cmd}"
     _, res, err = systemu(cmd)
+    Log4r::Logger['agent'].debug "Result: #{res}"
     err.blank?
   end
   
   def self.detach_disk(domU, block_device)
     cmd = "xm block-detach #{domU} #{block_device} --force"
-    puts cmd
+    Log4r::Logger['agent'].debug "Executing command: #{cmd}"
     _, res, err = systemu(cmd)
+    Log4r::Logger['agent'].debug "Result: #{res}"
     err.blank?
   end
   
