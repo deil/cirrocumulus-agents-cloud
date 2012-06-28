@@ -129,19 +129,11 @@ class XenNode
   end
   
   def self.attach_disk(domU, disk_number, block_device)
-    cmd = "xm block-attach #{domU} phy:/dev/md#{disk_number} #{block_device} w"
-    Log4r::Logger['agent'].debug "Executing command: #{cmd}"
-    _, res, err = systemu(cmd)
-    Log4r::Logger['agent'].debug "Result: #{res}"
-    err.blank?
+    perform_cmd("xm block-attach #{domU} phy:/dev/md#{disk_number} #{block_device} w")
   end
   
   def self.detach_disk(domU, block_device)
-    cmd = "xm block-detach #{domU} #{block_device} --force"
-    Log4r::Logger['agent'].debug "Executing command: #{cmd}"
-    _, res, err = systemu(cmd)
-    Log4r::Logger['agent'].debug "Result: #{res}"
-    err.blank?
+    perform_cmd("xm block-detach #{domU} #{block_device} --force")
   end
   
   def self.connect()
@@ -155,10 +147,10 @@ class XenNode
   private
 
   def self.perform_cmd(cmd, log_output = true)
-    Log4r::Logger['os'].debug(cmd) if log_output
+    Log4r::Logger['agent'].debug "Executing command: #{cmd}" if log_output
     _, out, err = systemu(cmd)
-    Log4r::Logger['os'].debug(out.strip) if log_output
-    Log4r::Logger['os'].debug(err.strip) if log_output
+    Log4r::Logger['agent'].debug "Result: #{res.strip}" if !res.strip.blank? && log_output
+    Log4r::Logger['agent'].debug "Error: #{err.strip}" if !err.strip.blank? && log_output
 
     err.blank?
   end
