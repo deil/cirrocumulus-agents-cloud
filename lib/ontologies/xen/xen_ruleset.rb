@@ -5,7 +5,16 @@ class XenRuleset < RuleEngine::Base
   
   def initialize(ontology)
     super()
+    info("Created new XenRuleset instance.")
     @ontology = ontology
+  end
+
+  def info(msg)
+    Log4r::Logger['kb'].info(msg)
+  end
+
+  def error(msg)
+    Log4r::Logger['kb'].warn(msg)
   end
   
   rule 'initialize', [[:just_started]] do |engine, params|

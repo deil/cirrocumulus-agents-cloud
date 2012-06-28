@@ -13,7 +13,6 @@ class XenOntology < Ontology::Base
 
   def initialize(agent)
     super('cirrocumulus-xen', agent)
-    logger.info "Starting XenOntology.."
     @engine = XenRuleset.new(self)
     @tick_at = Time.now + 1.minute
   end
@@ -209,6 +208,8 @@ class XenOntology < Ontology::Base
       handle_start_request(message.content.second, message)
     elsif action == :create
       handle_create_request(message.content.second, message)
+    elsif action == :attach
+      handle_attach_request(params[action], message)
     elsif action == :detach
       handle_detach_request(params[action], message)
     else
@@ -217,6 +218,18 @@ class XenOntology < Ontology::Base
       msg.ontology = self.name
       msg.in_reply_to = message.reply_with
       self.agent.send_message(msg)
+    end
+  end
+
+  def handle_attach_request(obj, original_message)
+    if XenNode.attach_disk(obj[:guest_id], obj[:disk_number], obj[:block_device])
+      msg = Cirrocumulus::Message.new(nil, 'inform', [original_message.content, [:finished]])
+      msg.ontology = self.name
+      self.agent.reply_to_message(msg, original_message)
+    else
+      msg = Cirrocumulus::Message.new(nil, 'failure', [original_message.content, [:unknown_reason]])
+      msg.ontology = self.name
+      self.agent.reply_to_message(msg, original_message)
     end
   end
   
