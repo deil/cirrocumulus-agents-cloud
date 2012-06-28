@@ -136,7 +136,7 @@ class XenNode
   end
   
   def self.detach_disk(domU, block_device)
-    cmd = "virsh detach-disk #{domU} #{block_device}"
+    cmd = "xm block-detach #{domU} #{block_device} --force"
     puts cmd
     _, res, err = systemu(cmd)
     err.blank?
