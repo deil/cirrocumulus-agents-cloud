@@ -221,7 +221,15 @@ class XenOntology < Ontology::Base
   end
   
   def handle_detach_request(obj, original_message)
-    p obj
+    if XenNode.detach_disk(obj[:guest_id], obj[:block_device])
+      msg = Cirrocumulus::Message.new(nil, 'inform', [original_message.content, [:finished]])
+      msg.ontology = self.name
+      self.agent.reply_to_message(msg, original_message)
+    else
+      msg = Cirrocumulus::Message.new(nil, 'failure', [original_message.content, [:unknown_reason]])
+      msg.ontology = self.name
+      self.agent.reply_to_message(msg, original_message)
+    end
   end
 
   # (stop (guest (id ..)))
