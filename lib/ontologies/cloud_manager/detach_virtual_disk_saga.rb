@@ -14,8 +14,10 @@ class DetachVirtualDiskSaga < Saga
   STATE_WAITING_FOR_REPLY = 1
 
   attr_reader :disk_number
+  attr_reader :original_message
 
   def start(disk_number, message = nil)
+    @original_message = message
     @disk_number = disk_number
     
     vdses = @ontology.engine.match [:virtual_disk, self.disk_number, :attached_to, :VDS, :as, :BLOCK_DEVICE]
@@ -42,7 +44,25 @@ class DetachVirtualDiskSaga < Saga
         set_timeout(DEFAULT_TIMEOUT)
 
       when STATE_WAITING_FOR_REPLY
-        finish()
+        if message
+          if message.act == 'inform' && message.content.last[0] == :finished
+            info = @ontology.engine.match [:virtual_disk, self.disk_number, :attached_to, @vds_uid, :as, :BLOCK_DEVICE]
+            block_device = info.first[:BLOCK_DEVICE]
+            @ontology.engine.retract [:virtual_disk, self.disk_number, :attached_to, @vds_uid, :as, block_device]
+            Log4r::Logger['kb'].debug "[#{id}] VD #{self.disk_number} was successfully detached from VDS #{@vds_uid}"
+
+            msg = Cirrocumulus::Message.new(nil, 'inform', [self.original_message.content, [:finished]])
+            msg.ontology = @ontology.name
+            @ontology.agent.reply_to_message(msg, self.original_message)
+            finish()
+          end
+        else
+          msg = Cirrocumulus::Message.new(nil, 'failure', [self.original_message.content, [:unknown_reason]])
+          msg.ontology = @ontology.name
+          @ontology.agent.reply_to_message(msg, self.original_message)
+          error()
+        end
+
     end
   end
 

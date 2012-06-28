@@ -38,8 +38,11 @@ class CloudRuleset < RuleEngine::Base
       end
 
       engine.assert [:vds, vds.uid, :actual_state, :unknown]
-    end
 
+      vds.disks.each do |disk|
+        engine.assert [:virtual_disk, disk.number, :attached_to, vds.uid, :as, disk.block_device]
+      end
+    end
   end
 
   #

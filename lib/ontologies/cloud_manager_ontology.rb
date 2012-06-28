@@ -3,6 +3,8 @@ require_relative 'cloud_manager/cloud_db-o1.rb'
 require_relative 'cloud_manager/cloud_ruleset.rb'
 require_relative 'cloud_manager/build_virtual_disk_saga.rb'
 require_relative 'cloud_manager/delete_virtual_disk_saga.rb'
+require_relative 'cloud_manager/attach_virtual_disk_saga.rb'
+require_relative 'cloud_manager/detach_virtual_disk_saga.rb'
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/build_xen_vds_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/create_xen_vds_saga.rb')
 require File.join(AGENT_ROOT, 'ontologies/cloud_manager/start_vds_saga.rb')
@@ -154,6 +156,82 @@ class CloudManagerOntology < Ontology::Base
       handle_create_request(params[action], message)
     elsif action == :delete
       handle_delete_request(params[action], message)
+    elsif action == :detach
+      handle_detach_request(params[action], message)
+    elsif action == :attach
+      handle_attach_request(params[action], message)
+    end
+  end
+  
+  # (detach (disk (disk_number ..))
+  def handle_detach_request(obj, original_message)
+    if obj.include? :disk
+      params = obj[:disk]
+      disk_number = params[:disk_number]
+
+      disk = VdsDisk.find_by_number(disk_number)
+      if disk.nil?
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [original_message.content, [:disk_not_found]])
+        msg.ontology = self.name
+        self.agent.reply_to_message(msg, original_message)
+        return
+      end
+
+      vdses = @engine.match [:virtual_disk, disk_number, :attached_to, :VDS, :as, :BLOCK_DEVICE]
+      if vdses.empty?
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [original_message.content, [:already_detached]])
+        msg.ontology = self.name
+        self.agent.reply_to_message(msg, original_message)
+        return
+      end
+
+      vds_uid = vdses.first[:VDS]
+
+      vds = VpsConfiguration.find_by_uid(vds_uid)
+      if vds.nil?
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [original_message.content, [:vds_not_found]])
+        msg.ontology = self.name
+        self.agent.reply_to_message(msg, original_message)
+        return
+      end
+
+      vds.detach_disk(disk)
+      create_saga(DetachVirtualDiskSaga).start(disk_number, original_message)
+    end
+  end
+  
+  # (attach (disk (disk_number ..) (vds_uid ..)))
+  def handle_attach_request(obj, original_message)
+    if obj.include? :disk
+      params = obj[:disk]
+      disk_number = params[:disk_number]
+      vds_uid = params[:vds_uid]
+
+      vds = VpsConfiguration.find_by_uid(vds_uid)
+      if vds.nil?
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [original_message.content, [:vds_not_found]])
+        msg.ontology = self.name
+        self.agent.reply_to_message(msg, original_message)
+        return
+      end
+
+      disk = VdsDisk.find_by_number(disk_number)
+      if disk.nil?
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [original_message.content, [:disk_not_found]])
+        msg.ontology = self.name
+        self.agent.reply_to_message(msg, original_message)
+        return
+      end
+
+      if vds.disks.find {|d| d.number == disk.number}
+        msg = Cirrocumulus::Message.new(nil, 'refuse', [original_message.content, [:already_attached]])
+        msg.ontology = self.name
+        self.agent.reply_to_message(msg, original_message)
+        return
+      end
+
+      vds.attach_disk(disk)
+      create_saga(AttachVirtualDiskSaga).start(disk_number, vds_uid, disk.block_device, original_message)
     end
   end
 
@@ -225,9 +303,6 @@ class CloudManagerOntology < Ontology::Base
     end
   end
   
-  def delete_virtual_disk(obj)
-  end
-
   def process_received_statistics(obj)
     params = Cirrocumulus::Message.parse_params(obj)
 
