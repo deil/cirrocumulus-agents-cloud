@@ -199,7 +199,7 @@ class XenOntology < Ontology::Base
 
   def handle_request(message)
     params = Cirrocumulus::Message.parse_params(message.content)
-    action = params.first
+    action = params.keys.first
 
     if action == :stop
       handle_stop_request(message.content.second, message)
