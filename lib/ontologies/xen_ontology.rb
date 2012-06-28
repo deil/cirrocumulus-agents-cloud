@@ -198,7 +198,8 @@ class XenOntology < Ontology::Base
   end
 
   def handle_request(message)
-    action = message.content.first
+    params = Cirrocumulus::Message.parse_params(message.content)
+    action = params.first
 
     if action == :stop
       handle_stop_request(message.content.second, message)
@@ -208,6 +209,8 @@ class XenOntology < Ontology::Base
       handle_start_request(message.content.second, message)
     elsif action == :create
       handle_create_request(message.content.second, message)
+    elsif action == :detach
+      handle_detach_request(params[action], message)
     else
       msg = Cirrocumulus::Message.new(nil, 'not-understood', [message.content, :action_not_supported])
       msg.receiver = message.sender
@@ -215,6 +218,10 @@ class XenOntology < Ontology::Base
       msg.in_reply_to = message.reply_with
       self.agent.send_message(msg)
     end
+  end
+  
+  def handle_detach_request(obj, original_message)
+    p obj
   end
 
   # (stop (guest (id ..)))
