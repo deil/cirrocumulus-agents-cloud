@@ -47,4 +47,5 @@ class XenRuleset < RuleEngine::Base
     engine.retract [:guest, guest, :powered_off] if engine.query [:guest, guest, :powered_off]
     engine.assert [:guest, guest, :running]
   end
+
 end

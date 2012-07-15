@@ -4,6 +4,7 @@ require_relative 'xen/xen_db.rb'
 require_relative 'xen/xen_ruleset.rb'
 require_relative 'xen/xen_node.rb'
 require_relative 'xen/start_guest_saga.rb'
+require_relative 'xen/start_virtual_disk_saga.rb'
 require_relative 'xen/mdraid.rb'
 require File.join(AGENT_ROOT, 'standalone/dom_u.rb')
 require File.join(AGENT_ROOT, 'standalone/mac.rb')
@@ -409,6 +410,9 @@ class XenOntology < Ontology::Base
         end
       end
 
+      self.create_saga(StartVirtualDiskSaga).start(disk_number, message)
+
+=begin
       if Mdraid.get_status(disk_number) == :stopped
         disk = VirtualDisk.find_by_disk_number(disk_number)
         if disk
@@ -442,6 +446,7 @@ class XenOntology < Ontology::Base
         msg.in_reply_to = message.reply_with
         self.agent.send_message(msg)
       end
+=end
     end
   end
 
