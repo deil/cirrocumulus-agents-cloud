@@ -26,10 +26,6 @@ class XenRuleset < RuleEngine::Base
     engine.retract [:just_started]
   end
 
-  rule 'aoe_appeared', [ [:aoe, :DISK_NUMBER, :EXPORT, :up] ] do |engine, params|
-    Log4r::Logger['kb'].info "New AOE export: #{params[:DISK_NUMBER]}.#{params[:EXPORT]}"
-  end
-
   rule 'aoe_dissapeared', [ [:aoe, :DISK_NUMBER, :EXPORT, :down] ] do |engine, params|
     Log4r::Logger['kb'].info "AOE export is down: #{params[:DISK_NUMBER]}.#{params[:EXPORT]}"
   end
