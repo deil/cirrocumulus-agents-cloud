@@ -11,8 +11,8 @@ class Aoe
     result = []
     @lines.each do |line|
       l = line.split(" ")
-      if l.first =~ /e#{disk_number}\.\d/
-        result << l.first if l[4] == 'up'
+      if l.first =~ /e#{disk_number}\.(\d)/
+        result << $1 if l[4] == 'up'
       end
     end
 
