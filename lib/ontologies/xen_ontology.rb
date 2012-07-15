@@ -31,8 +31,8 @@ class XenOntology < Ontology::Base
     VirtualDisk.all.each do |vd|
       if Mdraid.get_status(vd.disk_number) == :active
         @engine.assert [:virtual_disk, vd.disk_number, :state, :started]
-        @engine.assert [:aoe, vd.disk_number, 1, :up]
-        @engine.assert [:aoe, vd.disk_number, 2, :up]
+        @engine.assert [:aoe, vd.disk_number, '1', :up]
+        @engine.assert [:aoe, vd.disk_number, '2', :up]
       else
         @engine.assert [:virtual_disk, vd.disk_number, :state, :stopped]
       end
@@ -167,7 +167,7 @@ class XenOntology < Ontology::Base
       end
 
       info.each do |export|
-        if visible_exports.include?(export)
+        if visible_exports.map {|i| i[:EXPORT]}.include?(export)
           @engine.replace [:aoe, vd.disk_number, export, :STATE], :down
         end
       end
