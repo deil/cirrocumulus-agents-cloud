@@ -5,6 +5,7 @@ require_relative 'xen/xen_ruleset.rb'
 require_relative 'xen/xen_node.rb'
 require_relative 'xen/start_guest_saga.rb'
 require_relative 'xen/start_virtual_disk_saga.rb'
+require_relative 'xen/aoe.rb'
 require_relative 'xen/mdraid.rb'
 require File.join(AGENT_ROOT, 'standalone/dom_u.rb')
 require File.join(AGENT_ROOT, 'standalone/mac.rb')
@@ -26,6 +27,14 @@ class XenOntology < Ontology::Base
 
     discover_new_disks()
     changes_made = shut_all_disks_down()
+
+    VirtualDisk.all.each do |vd|
+      if Mdraid.get_status(vd.disk_number) == :active
+        @engine.assert [:virtual_disk, vd.disk_number, :state, :started]
+      else
+        @engine.assert [:virtual_disk, vd.disk_number, :state, :stopped]
+      end
+    end
 
     running_guests = XenNode::list_running_guests()
     running_guests.each do |guest_id|
@@ -69,6 +78,7 @@ class XenOntology < Ontology::Base
     return if Time.now < @tick_at
 
     collect_all_guests_stats()
+    collect_aoe_stats()
 
       VirtualDisk.all.each do |disk|
         #@engine.assert [:mdraid, disk.disk_number, :failed] if Mdraid.get_status(disk.disk_number) == :failed
@@ -141,6 +151,23 @@ class XenOntology < Ontology::Base
         msg = Cirrocumulus::Message.new(nil, 'inform', [:guest, [:uid, guest_id], [:vif, idx], [:rx, vif[:rx]], [:tx, vif[:tx]]])
         msg.ontology = 'cirrocumulus-cloud'
         self.agent.send_message(msg)
+      end
+    end
+  end
+
+  def collect_aoe_stats()
+    aoe = Aoe.new
+    VirtualDisk.all.each do |vd|
+      info = @engine.match [:aoe, vd.disk_number, :EXPORT, :up]
+      visible_exports = aoe.exports(vd.disk_number)
+      visible_exports.each do |export|
+        @engine.replace [:aoe, vd.disk_number, export, :STATE], :up
+      end
+
+      info.each do |export|
+        if visible_exports.include?(export)
+          @engine.replace [:aoe, vd.disk_number, export, :STATE], :down
+        end
       end
     end
   end
