@@ -167,7 +167,7 @@ class XenOntology < Ontology::Base
       end
 
       info.each do |export|
-        if visible_exports.map {|i| i[:EXPORT]}.include?(export)
+        if visible_exports.include?(export[:EXPORT])
           @engine.replace [:aoe, vd.disk_number, export, :STATE], :down
         end
       end
