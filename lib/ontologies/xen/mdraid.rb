@@ -116,10 +116,10 @@ class Mdraid
     item = @data.find {|l| l =~ /State : ([\w ,]+)$/}
     if !item.empty?
       states = item.split(', ')
-      return false if states.include?('degraded')
+      return true if states.include?('active') || states.include?('clean')
     end
 
-    true
+    false
   end
 
   def initializing?
