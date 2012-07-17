@@ -116,9 +116,6 @@ class Mdraid
     item = @data.find {|l| l =~ /State : ([\w ,]+)$/}
     if !item.empty?
       states = item.split(', ')
-
-      return false if states.include?('recovering')
-      return false if states.include?('resyncing')
       return false if states.include?('degraded')
     end
 
@@ -142,6 +139,17 @@ class Mdraid
       states = item.split(', ')
 
       return true if states.include?('degraded')
+    end
+
+    false
+  end
+
+  def recovering?
+    item = @data.find {|l| l =~ /State : ([\w ,]+)$/}
+    if !item.empty?
+      states = item.split(', ')
+
+      return true if states.include?('recovering')
     end
 
     false
