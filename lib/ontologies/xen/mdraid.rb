@@ -115,7 +115,9 @@ class Mdraid
   def clean?
     item = @data.find {|l| l =~ /State : ([\w ,]+)$/}
     if !item.empty?
-      states = item.split(', ')
+      item =~ /State : ([\w ,]+)$/
+      states = $1.split(', ')
+      p states
       return true if states.include?('active') || states.include?('clean')
     end
 
@@ -125,7 +127,8 @@ class Mdraid
   def initializing?
     item = @data.find {|l| l =~ /State : ([\w ,]+)$/}
     if !item.empty?
-      states = item.split(', ')
+      item =~ /State : ([\w ,]+)$/
+      states = $1.split(', ')
 
       return true if !states.include?('degraded') && states.include?('resyncing')
     end
@@ -136,7 +139,8 @@ class Mdraid
   def degraded?
     item = @data.find {|l| l =~ /State : ([\w ,]+)$/}
     if !item.empty?
-      states = item.split(', ')
+      item =~ /State : ([\w ,]+)$/
+      states = $1.split(', ')
 
       return true if states.include?('degraded')
     end
@@ -147,7 +151,8 @@ class Mdraid
   def recovering?
     item = @data.find {|l| l =~ /State : ([\w ,]+)$/}
     if !item.empty?
-      states = item.split(', ')
+      item =~ /State : ([\w ,]+)$/
+      states = $1.split(', ')
 
       return true if states.include?('recovering')
     end
