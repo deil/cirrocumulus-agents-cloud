@@ -92,8 +92,72 @@ class Mdraid
   
   def initialize(disk_number)
     @disk_number = disk_number
+    refresh()
   end
-  
+
+  def refresh
+    cmd = "mdadm --detail /dev/md#{self.disk_number}"
+    _, out, err = systemu(cmd)
+    @error = err.empty?
+    @data = out.split("\n")
+  end
+
+  def number_of_devices
+    item = @data.find {|l| l =~ /Raid Devices : (\d)/}
+    return item.empty? ? 0 : $1.to_i
+  end
+
+  def number_of_active_devices
+    item = @data.find {|l| l =~ /Active Devices : (\d)/}
+    return item.empty? ? 0 : $1.to_i
+  end
+
+  def clean?
+    item = @data.find {|l| l =~ /State : ([\w ,]+)$/}
+    if !item.empty?
+      states = item.split(', ')
+
+      return false if states.include?('recovering')
+      return false if states.include?('resyncing')
+      return false if states.include?('degraded')
+    end
+
+    true
+  end
+
+  def initializing?
+    item = @data.find {|l| l =~ /State : ([\w ,]+)$/}
+    if !item.empty?
+      states = item.split(', ')
+
+      return true if !states.include?('degraded') && states.include?('resyncing')
+    end
+
+    false
+  end
+
+  def degraded?
+    item = @data.find {|l| l =~ /State : ([\w ,]+)$/}
+    if !item.empty?
+      states = item.split(', ')
+
+      return true if states.include?('degraded')
+    end
+
+    false
+  end
+
+  def failed_devices
+    devices = []
+    @data.each do |l|
+      if l =~ /faulty spare\s+\/dev\/etherd\/e(d+)\.(\d)$/
+        devices << "e#{$1}.#{$2}"
+      end
+    end
+
+    devices
+  end
+
   def aoe_devices
     cmd = "cat /proc/mdstat | grep md#{disk_number}"
     Log4r::Logger['os'].debug(cmd)
