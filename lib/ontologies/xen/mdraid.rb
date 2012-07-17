@@ -98,7 +98,7 @@ class Mdraid
   def refresh
     cmd = "mdadm --detail /dev/md#{self.disk_number}"
     _, out, err = systemu(cmd)
-    @error = err.empty?
+    @error = !err.empty?
     @data = out.split("\n")
   end
 
@@ -150,7 +150,7 @@ class Mdraid
   def failed_devices
     devices = []
     @data.each do |l|
-      if l =~ /faulty spare\s+\/dev\/etherd\/e(d+)\.(\d)$/
+      if l =~ /faulty spare\s+\/dev\/etherd\/e(\d+)\.(\d)$/
         devices << "e#{$1}.#{$2}"
       end
     end
