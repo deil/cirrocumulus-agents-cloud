@@ -52,15 +52,19 @@ class Mdraid
     err =~ /array \/dev\/md#{disk_number} started/
   end
 
-  def self.assemble(disk_number)
-    exports = check_aoe(disk_number)
+  def self.assemble(disk_number, exports)
     devices = exports_to_aoe_devices(exports)
     cmd = "mdadm --assemble /dev/md#{disk_number} " + devices.join(' ') + " --run"
     Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
     Log4r::Logger['os'].debug(out.strip)
     Log4r::Logger['os'].debug(err.strip)
-    err.blank? || err.include?("has been started")
+
+    if err.blank? || err.include?("has been started")
+      return self.new(disk_number)
+    end
+
+    nil
   end
 
   def self.stop(disk_number)

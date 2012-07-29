@@ -1,3 +1,6 @@
+require_relative 'aoe.rb'
+require_relative 'mdraid.rb'
+
 class StartVirtualDiskSaga < Saga
   STATE_CHECK_EXPORTS = 1
 
@@ -37,13 +40,30 @@ class StartVirtualDiskSaga < Saga
         end
 
       when STATE_CHECK_EXPORTS
-        finish()
-
+        aoe = Aoe.new()
+        exports = aoe.exports(self.disk_number)
+        md = Mdraid.assemble(self.disk_number, exports.map {|e| "e%d.%s" % [self.disk_number, e]})
+        if md.clean?
+          notify_finished()
+          finish()
+        else
+          notify_failure(:unknown_error)
+          error()
+        end
     end
   end
 
   def notify_refused(reason)
     Log4r::Logger['agent'].warn "[#{id}] Refuse: #{reason}"
+    return unless @original_message
+
+    msg = Cirrocumulus::Message.new(nil, 'refuse', [@original_message.content, [reason]])
+    msg.ontology = @ontology.name
+    @ontology.agent.reply_to_message(msg, @original_message)
+  end
+
+  def notify_failure(reason)
+    Log4r::Logger['agent'].warn "[#{id}] Failure: #{reason}"
     return unless @original_message
 
     msg = Cirrocumulus::Message.new(nil, 'failure', [@original_message.content, [reason]])
