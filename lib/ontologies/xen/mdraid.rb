@@ -117,7 +117,6 @@ class Mdraid
     if !item.empty?
       item =~ /State : ([\w ,]+)$/
       states = $1.split(', ')
-      p states
       return true if states.include?('active') || states.include?('clean')
     end
 
@@ -129,7 +128,6 @@ class Mdraid
     if !item.empty?
       item =~ /State : ([\w ,]+)$/
       states = $1.split(', ')
-
       return true if !states.include?('degraded') && states.include?('resyncing')
     end
 
@@ -141,7 +139,6 @@ class Mdraid
     if !item.empty?
       item =~ /State : ([\w ,]+)$/
       states = $1.split(', ')
-
       return true if states.include?('degraded')
     end
 
@@ -153,7 +150,6 @@ class Mdraid
     if !item.empty?
       item =~ /State : ([\w ,]+)$/
       states = $1.split(', ')
-
       return true if states.include?('recovering')
     end
 

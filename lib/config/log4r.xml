@@ -41,14 +41,14 @@
   </logger>
   <logger name="bus" level="ALL" additive="false" trace="false">
     <outputter>console</outputter>
+    <outputter>agent_log</outputter>
   </logger>
   <logger name="agent" level="ALL" additive="false" trace="false">
     <outputter>agent_log</outputter>
   </logger>
   <logger name="cirrocumulus" level="ALL" additive="false" trace="false">
 	  <outputter>console</outputter>
-    <outputter>decisions_file</outputter>
-    <outputter>file</outputter>
+    <outputter>agent_log</outputter>
   </logger>
 
   <logger name="kb" level="INFO" additive="false" trace="false">

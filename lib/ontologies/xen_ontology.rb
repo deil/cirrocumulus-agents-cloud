@@ -79,8 +79,8 @@ class XenOntology < Ontology::Base
   def handle_tick()
     return if Time.now < @tick_at
 
-    collect_all_guests_stats()
-    collect_aoe_stats()
+    #collect_all_guests_stats()
+    #collect_aoe_stats()
 
       VirtualDisk.all.each do |disk|
         #@engine.assert [:mdraid, disk.disk_number, :failed] if Mdraid.get_status(disk.disk_number) == :failed
