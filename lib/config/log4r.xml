@@ -6,7 +6,10 @@
     <filename>logs/agent.log</filename>
   </outputter>
 
-  <outputter name="ruler_log" type="FileOutputter" level="INFO">
+  <outputter name="ruler_log" type="FileOutputter" level="ALL">
+    <formatter type="Log4r::PatternFormatter">
+      <pattern>[%5l %d] %M</pattern>
+    </formatter>
     <filename>logs/ruler.log</filename>
   </outputter>
 
@@ -56,7 +59,7 @@
     <outputter>agent_log</outputter>
   </logger>
 
-  <logger name="kb_trace" level="DEBUG" additive="false" trace="false">
-    <outputter>kb_log</outputter>
+  <logger name="kb_trace" level="INFO" additive="false" trace="false">
+    <outputter>ruler_log</outputter>
   </logger>
 </log4r_config>

@@ -1,5 +1,41 @@
 require_relative '../../standalone/mac.rb'
 
+module Cirrocumulus
+  class Message
+    def self.query_free_memory(reply_with)
+      msg = Cirrocumulus::Message.new(nil, 'query-ref', [:free_memory])
+      msg.ontology = 'cirrocumulus-xen'
+      msg.reply_with = reply_with
+      msg
+    end
+
+    def self.query_vd_state(disk_number, agent, saga_id)
+      msg = Cirrocumulus::Message.new(nil, 'query-if', [:active, [:disk, [:disk_number, disk_number]]])
+      msg.receiver = agent
+      msg.ontology = 'cirrocumulus-xen'
+      msg.conversation_id = saga_id
+      msg
+    end
+
+    def self.stop_vd(disk_number)
+      msg = Cirrocumulus::Message.new(nil, 'request', [:stop, [:disk, [:disk_number, disk_number]]])
+      msg.ontology = 'cirrocumulus-xen'
+      msg.conversation_id = 'ignored'
+      msg
+    end
+
+    def self.start_vd(disk_number, agent, saga_id)
+      msg = Cirrocumulus::Message.new(nil, 'request', [:start, [:disk, [:disk_number, disk_number]]])
+      msg.ontology = 'cirrocumulus-xen'
+      msg.receiver = agent
+      msg.conversation_id = saga_id
+      msg
+    end
+  end
+end
+
+# Starts selected VDS.
+# Queries all available nodes, selects one of them and starts there VDS, meanwhile activating all necessary VDs.
 class StartVdsSaga < Saga
   STATE_SEARCHING_FOR_GUEST = 1
   STATE_SELECTING_HOST = 2
@@ -17,10 +53,12 @@ class StartVdsSaga < Saga
     @vds.start()
     Log4r::Logger['agent'].info "[#{id}] Starting VDS #{vds.uid} (#{vds.id}) [RAM=#{vds.current.ram}Mb]"
     @ontology.engine.replace [:vds, vds.uid, :actual_state, :STOPPED], :starting
-    handle() if vds.uid == '048f19209e9b11de8a390800200c9a66'
+    handle() #if vds.uid == '048f19209e9b11de8a390800200c9a66'
   end
   
   def handle(message = nil)
+    Log4r::Logger['agent'].debug(message.inspect) if message
+
     case @state
       when STATE_START
         msg = Cirrocumulus::Message.new(nil, 'query-if', [:running, [:guest, vds.uid]])
@@ -33,10 +71,7 @@ class StartVdsSaga < Saga
         
       when STATE_SEARCHING_FOR_GUEST
         if message.nil?
-          msg = Cirrocumulus::Message.new(nil, 'query-ref', [:free_memory])
-          msg.ontology = 'cirrocumulus-xen'
-          msg.reply_with = @id
-          @ontology.agent.send_message(msg)
+          @ontology.agent.send_message(Cirrocumulus::Message.query_free_memory(self.id))
           @hosts = []
           change_state(STATE_SELECTING_HOST)
           set_timeout(DEFAULT_TIMEOUT)
@@ -73,13 +108,9 @@ class StartVdsSaga < Saga
             Log4r::Logger['agent'].info "[#{id}] Will try #{host[:agent]} (#{host[:free_memory]}Mb RAM available, #{vds.current.ram}Mb needed)"
 
             Log4r::Logger['agent'].info "[#{id}] Need to activate disks: %s" % [vds.disks.map {|d| d.storage_disk.disk_number}]
-            @virtual_disk_states = vds.disks.map {|disk| {:disk => disk, :active => false}}
+            @virtual_disk_states = vds.disks.map {|disk| {:disk => disk, :active => :do_not_know}}
             vds.disks.each do |disk|
-              msg = Cirrocumulus::Message.new(nil, 'query-if', [:active, [:disk, [:disk_number, disk.number]]])
-              msg.receiver = host[:agent]
-              msg.ontology = 'cirrocumulus-xen'
-              msg.conversation_id = id
-              @ontology.agent.send_message(msg)
+              @ontology.agent.send_message(Cirrocumulus::Message.query_vd_state(disk.number, host[:agent], self.id))
             end
 
             change_state(STATE_CHECKING_VIRTUAL_DISKS)
@@ -101,40 +132,26 @@ class StartVdsSaga < Saga
               Log4r::Logger['agent'].info "[#{id}] Virtual disk #{disk[:disk].number} is already active"
               @ontology.engine.assert [:virtual_disk, disk[:disk].number, :active_on, @selected_host[:agent]]
             end
-          end
-        else
-          if @virtual_disk_states.all? {|disk_state| disk_state[:active] == true}
-            change_state(STATE_STARTING_GUEST)
-            set_timeout(1)
-          else
-            @need_to_activate = @virtual_disk_states.select {|disk_state| disk_state[:active] == false}
-            @need_to_activate.each do |disk_state|
-              Log4r::Logger['agent'].info "[#{id}] Activating virtual disk: #{disk_state[:disk].number}"
-
-              msg = Cirrocumulus::Message.new(nil, 'request', [:stop, [:disk, [:disk_number, disk_state[:disk].number]]])
-              msg.ontology = 'cirrocumulus-xen'
-              msg.conversation_id = 'ignored'
-              @ontology.agent.send_message(msg)
-
-              msg = Cirrocumulus::Message.new(nil, 'request', [:start, [:disk, [:disk_number, disk_state[:disk].number]]])
-              msg.ontology = 'cirrocumulus-xen'
-              msg.receiver = @hosts[@selected_host[:index]][:agent]
-              msg.conversation_id = id
-              @ontology.agent.send_message(msg)
+          elsif message.content.first == :not
+            disk_number = message.content[1][1][1][1].to_i # TODO: this is stupid
+            @virtual_disk_states.each do |disk|
+              next if disk[:disk].number != disk_number
+              disk[:active] = false
+              Log4r::Logger['agent'].info "[#{id}] Virtual disk #{disk[:disk].number} is not active"
             end
+          end
 
-            change_state(STATE_ACTIVATING_VIRTUAL_DISKS)
-            set_timeout(LONG_TIMEOUT)
+          check_disk_states_and_do_transition()
+        else # timeout
+          if !check_disk_states_and_do_transition()
+            error()
+            notify_failure(:communication_timeout)
           end
         end
 
       when STATE_ACTIVATING_VIRTUAL_DISKS
         if message
-          p message
           if message.act == 'inform' && message.sender == @hosts[@selected_host[:index]][:agent]
-            params = Cirrocumulus::Message.parse_params(message.content)
-            #p params
-            # (start (disk (disk_number ..))) (finished)
             disk_number = message.content[0][1][1][1].to_i
             @need_to_activate.each do |disk_state|
               if disk_state[:disk].number == disk_number
@@ -143,8 +160,13 @@ class StartVdsSaga < Saga
               end
             end
           end
+
+          if all_disks_active?
+            change_state(STATE_STARTING_GUEST)
+            set_timeout(1)
+          end
         else
-          if @need_to_activate.all? {|disk_state| disk_state[:active] == true}
+          if all_disks_active?
             change_state(STATE_STARTING_GUEST)
             set_timeout(1)
           else
@@ -174,7 +196,7 @@ class StartVdsSaga < Saga
 
         msg = Cirrocumulus::Message.new(nil, 'request', [:start, guest_parameters])
         msg.ontology = 'cirrocumulus-xen'
-        msg.receiver = @selected_host[:agent]
+        msg.receiver = @hosts[@selected_host[:index]][:agent]
         msg.reply_with = id
         @ontology.agent.send_message(msg)
 
@@ -204,6 +226,39 @@ class StartVdsSaga < Saga
   end
 
   protected
+
+  def check_disk_states_and_do_transition
+    return false unless all_disk_states_are_known?
+
+    if all_disks_active?
+      change_state(STATE_STARTING_GUEST)
+      set_timeout(1)
+    else
+      @need_to_activate = @virtual_disk_states.select {|disk_state| disk_state[:active] == false}
+      @need_to_activate.each do |disk_state|
+        Log4r::Logger['agent'].info "[#{id}] Activating virtual disk: #{disk_state[:disk].number}"
+
+        msg = Cirrocumulus::Message.stop_vd(disk_state[:disk].number)
+        @ontology.agent.send_message(msg)
+
+        msg = Cirrocumulus::Message.start_vd(disk_state[:disk].number, @hosts[@selected_host[:index]][:agent], self.id)
+        @ontology.agent.send_message(msg)
+      end
+
+      change_state(STATE_ACTIVATING_VIRTUAL_DISKS)
+      set_timeout(LONG_TIMEOUT)
+    end
+
+    true
+  end
+
+  def all_disk_states_are_known?
+    @virtual_disk_states.all? {|disk_state| disk_state[:active] != :do_not_know}
+  end
+
+  def all_disks_active?
+    @virtual_disk_states.all? {|disk_state| disk_state[:active] == true}
+  end
 
   def notify_refused(reason)
     Log4r::Logger['agent'].info "[#{id}] refuse: #{reason}"

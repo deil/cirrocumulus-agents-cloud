@@ -25,6 +25,9 @@ class CloudRuleset < RuleEngine::Base
     engine.info("Collecting information about all active virtual servers..")
     engine.retract [:just_started]
 
+    engine.ontology.discover_nodes()
+    engine.ontology.discover_storages()
+    
     VdsDisk.all.each do |disk|
       engine.assert [:virtual_disk, disk.number, :state, :active]
       engine.assert [:virtual_disk, disk.number, :actual_state, :clean]
@@ -35,6 +38,7 @@ class CloudRuleset < RuleEngine::Base
         engine.assert [:vds, vds.uid, :state, :running]
       else
         engine.assert [:vds, vds.uid, :state, :stopped]
+        Log4r::Logger['cirrocumulus'].info "Active VDS #{vds.uid} is stopped."
       end
 
       engine.assert [:vds, vds.uid, :actual_state, :unknown]
@@ -44,11 +48,18 @@ class CloudRuleset < RuleEngine::Base
       end
     end
   end
+  
+  rule 'storages_and_nodes_are_discovered', [ [:nodes, :discovered], [:storages, :discovered] ] do |engine, params|
+    engine.info('Ontology is fully initialized.')
+    engine.retract [:nodes, :discovered], true
+    engine.retract [:storages, :discovered], true
+    engine.assert [:initialized]
+  end
 
   #
   # VDS has unknown actual state, we need to query all nodes and understand if it is running somewhere
   #
-  rule 'unknown_vds_state', [ [:vds, :VDS, :actual_state, :unknown] ] do |engine, params|
+  rule 'unknown_vds_state', [ [:vds, :VDS, :actual_state, :unknown], [:initialized] ] do |engine, params|
     vds_uid = params[:VDS]
 
     engine.info("Must query VDS #{vds_uid} state (current: unknown)")
@@ -66,11 +77,11 @@ class CloudRuleset < RuleEngine::Base
   #
   rule 'vds_should_be_running', [ [:vds, :VDS, :state, :running], [:vds, :VDS, :actual_state, :stopped] ] do |engine, params|
     vds = params[:VDS]
+    Log4r::Logger['cirrocumulus'].info "VDS #{vds} state is: stopped, should be: running"
 
     matched_nodes = engine.match [:vds, vds, :running_on, :NODE]
     matched_nodes.each {|match| engine.retract [:vds, vds, :running_on, match[:NODE]]}
 
-    Log4r::Logger['cirrocumulus'].info "VDS #{vds} state is: stopped, should be: running"
     engine.ontology.start_xen_vds(VpsConfiguration.find_by_uid(vds))
   end
 
@@ -124,6 +135,22 @@ class CloudRuleset < RuleEngine::Base
     if engine.match([:vds, vds, :running_on, :NODE]).empty?
       Log4r::Logger['cirrocumulus'].warn "Externally started VDS #{vds}"
     end
+  end
+  
+  #
+  # VDS is starting for a too long.
+  #
+  rule 'vds_starting_too_long', [ [:vds, :VDS, :actual_state, :starting] ], :for => 5.minutes do |engine, params|
+    vds = params[:VDS]
+    Log4r::Logger['cirrocumulus'].warn "Warning! VDS #{vds} is in STARTING state for a too long. Action needed."
+  end
+  
+  #
+  # VDS is stopping for a too long.
+  #
+  rule 'vds_stopping_too_long', [ [:vds, :VDS, :actual_state, :stopping] ], :for => 5.minutes do |engine, params|
+    vds = params[:VDS]
+    Log4r::Logger['cirrocumulus'].warn "Warning! VDS #{vds} is in STOPPING state for a too long. Action needed."
   end
 
   #

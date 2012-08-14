@@ -31,17 +31,22 @@ class DetachVirtualDiskSaga < Saga
     case @state
       when STATE_START then
         info = @ontology.engine.match [:virtual_disk, self.disk_number, :attached_to, @vds_uid, :as, :BLOCK_DEVICE]
-        block_device = info.first[:BLOCK_DEVICE]
-        
-        info = @ontology.engine.match [:vds, @vds_uid, :running_on, :NODE]
-        node = info.first[:NODE]
-        
-        Log4r::Logger['kb'].debug "[#{id}] VDS #{@vds_uid} is running on #{node}, VD is attached as #{block_device}"
-      
-        @ontology.agent.send_message(Cirrocumulus::Message.detach_block_device(self.id, node, @vds_uid, block_device))
+        if info.size > 0
+          block_device = info.first[:BLOCK_DEVICE]
 
-        change_state(STATE_WAITING_FOR_REPLY)
-        set_timeout(DEFAULT_TIMEOUT)
+          info = @ontology.engine.match [:vds, @vds_uid, :running_on, :NODE]
+          node = info.first[:NODE]
+
+          Log4r::Logger['kb'].debug "[#{id}] VDS #{@vds_uid} is running on #{node}, VD is attached as #{block_device}"
+
+          @ontology.agent.send_message(Cirrocumulus::Message.detach_block_device(self.id, node, @vds_uid, block_device))
+
+          change_state(STATE_WAITING_FOR_REPLY)
+          set_timeout(DEFAULT_TIMEOUT)
+        else
+          Log4r::Logger['kb'].debug "[#{id}] VDS #{@vds_uid} is not running. Updating database only."
+          finish()
+        end
 
       when STATE_WAITING_FOR_REPLY
         if message

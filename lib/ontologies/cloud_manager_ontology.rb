@@ -1,6 +1,8 @@
 require 'cirrocumulus/saga'
 require_relative 'cloud_manager/cloud_db-o1.rb'
 require_relative 'cloud_manager/cloud_ruleset.rb'
+require_relative 'cloud_manager/query_nodes_saga.rb'
+require_relative 'cloud_manager/query_storages_saga.rb'
 require_relative 'cloud_manager/build_virtual_disk_saga.rb'
 require_relative 'cloud_manager/delete_virtual_disk_saga.rb'
 require_relative 'cloud_manager/attach_virtual_disk_saga.rb'
@@ -25,6 +27,14 @@ class CloudManagerOntology < Ontology::Base
     @engine.assert [:just_started]
   end
 
+  def discover_nodes()
+    create_saga(QueryNodesSaga).start()
+  end
+
+  def discover_storages()
+    create_saga(QueryStoragesSaga).start()
+  end
+
   def query_xen_vds_state(vds_uid)
     saga = create_saga(QueryXenVdsStateSaga)
     saga.start(vds_uid, nil)
@@ -32,7 +42,7 @@ class CloudManagerOntology < Ontology::Base
 
   def start_xen_vds(vds)
     saga = create_saga(StartVdsSaga)
-    saga.start(vds, nil) if vds.uid == "048f19209e9b11de8a390800200c9a66"
+    saga.start(vds, nil) #if vds.uid == "048f19209e9b11de8a390800200c9a66"
   end
 
   def stop_xen_vds(vds)
@@ -54,12 +64,18 @@ class CloudManagerOntology < Ontology::Base
   protected
   
   def handle_message(message, kb)
-    #p message
+    p message
 
     case message.act
       when 'inform' then
         return if process_received_statistics(message.content)
-        return if @engine.query(message.content)
+
+        if @engine.query(message.content)
+          p "@engine.query = 'true' for:"
+          p message
+          return
+        end
+
         if message.content.first == :vds && message.content[2] == :state
           vds_id = message.content[1]
           @engine.replace [:vds, vds_id, :state, :STATE], message.content[3]
@@ -148,18 +164,25 @@ class CloudManagerOntology < Ontology::Base
 
   def handle_request(message)
     params = Cirrocumulus::Message.parse_params(message.content)
-    action = params.keys.first
 
-    if action == :reboot
-      handle_reboot_request(params[action], message)
-    elsif action == :create
-      handle_create_request(params[action], message)
-    elsif action == :delete
-      handle_delete_request(params[action], message)
-    elsif action == :detach
-      handle_detach_request(params[action], message)
-    elsif action == :attach
-      handle_attach_request(params[action], message)
+    if params.is_a?(Symbol)
+      if params == :dump
+        @engine.dump_kb()
+      end
+    else
+      action = params.keys.first
+
+      if action == :reboot
+        handle_reboot_request(params[action], message)
+      elsif action == :create
+        handle_create_request(params[action], message)
+      elsif action == :delete
+        handle_delete_request(params[action], message)
+      elsif action == :detach
+        handle_detach_request(params[action], message)
+      elsif action == :attach
+        handle_attach_request(params[action], message)
+      end
     end
   end
   

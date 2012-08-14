@@ -23,6 +23,8 @@ class StopVdsSaga < Saga
   end
   
   def handle(message = nil)
+    Log4r::Logger['agent'].debug(message.inspect) if message
+    
     case @state
       when STATE_START
         matched_node = @ontology.engine.match [:vds, vds.uid, :running_on, :NODE]

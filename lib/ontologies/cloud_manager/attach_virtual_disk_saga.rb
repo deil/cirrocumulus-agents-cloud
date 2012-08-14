@@ -32,13 +32,18 @@ class AttachVirtualDiskSaga < Saga
     case @state
       when STATE_START then
         info = @ontology.engine.match [:vds, @vds_uid, :running_on, :NODE]
-        node = info.first[:NODE]
-        Log4r::Logger['kb'].debug "[#{id}] VDS #{@vds_uid} is running on #{node}"
+        if info.size > 0
+          node = info.first[:NODE]
+          Log4r::Logger['kb'].debug "[#{id}] VDS #{@vds_uid} is running on #{node}"
 
-        @ontology.agent.send_message(Cirrocumulus::Message.attach_block_device(self.id, node, self.vds_uid, self.disk_number, self.block_device))
+          @ontology.agent.send_message(Cirrocumulus::Message.attach_block_device(self.id, node, self.vds_uid, self.disk_number, self.block_device))
 
-        change_state(STATE_WAITING_FOR_REPLY)
-        set_timeout(DEFAULT_TIMEOUT)
+          change_state(STATE_WAITING_FOR_REPLY)
+          set_timeout(LONG_TIMEOUT)
+        else
+          Log4::Logger['kb'].debug "[#{id}] VDS #{@vds_uid} is not running. Updating database only."
+          finish()
+        end
 
       when STATE_WAITING_FOR_REPLY
         if message
