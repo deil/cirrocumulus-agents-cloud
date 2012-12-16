@@ -10,6 +10,10 @@ class Hypervisor
       @@libvirt.close
     end
 
+    def total_memory
+      @@libvirt.node_get_info.memory / 1024
+    end
+
     def free_memory
       @@libvirt.node_free_memory / (1024*1024)
     end
@@ -19,7 +23,7 @@ class Hypervisor
       _, res = systemu(cmd)
     end
 
-    def list_running_guests
+    def running_guests
       guests = @@libvirt.list_domains().map {|dom_id| @@libvirt.lookup_domain_by_id(dom_id).name}
       guests.shift
       guests

@@ -20,6 +20,10 @@ class HypervisorOntology < Ontology
   def handle_query(sender, expression, options = {})
     if expression == [:free_memory]
       inform(sender, [[:free_memory], Hypervisor.free_memory], reply(options))
+    elsif expression == [:used_memory]
+      inform(sender, [[:used_memory], Hypervisor.total_memory - Hypervisor.free_memory], reply(options))
+    elsif expression == [:guests_count]
+      inform(sender, [[:guests_count], Hypervisor.running_guests.size], reply(options))
     else
       super(sender, expression, options)
     end
