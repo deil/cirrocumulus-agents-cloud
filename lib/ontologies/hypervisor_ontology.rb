@@ -59,7 +59,8 @@ class HypervisorOntology < Ontology
   def handle_inform(sender, proposition, options = {})
     if (storage = Storage.from_fact(proposition))
       matcher = PatternMatcher.new(@facts.enumerate)
-      if (bindings = matcher.match(storage.to_template))
+      bindings = matcher.match(storage.to_template)
+      if !bindings.empty?
         p bindings
       else
         assert proposition
