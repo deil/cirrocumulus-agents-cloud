@@ -28,7 +28,10 @@ class HypervisorOntology < Ontology
   end
 
   def handle_query_if(sender, proposition, options = {})
+    p proposition
+    if proposition.first == :running
 
+    end
   end
 
   def handle_request(sender, contents, options = {})
