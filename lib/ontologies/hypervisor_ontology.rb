@@ -11,6 +11,10 @@ class HypervisorOntology < Ontology
     puts "storage number #{params[:NUMBER]} went offline"
   end
 
+  rule 'storage_goes_online', [ [:storage, :NUMBER, :state, :online] ] do |ontology, params|
+    puts "storage number #{params[:NUMBER]} goes online"
+  end
+
   def restore_state
     Hypervisor.connect
     Hypervisor.set_cpu(0, 10000, 0)
@@ -41,6 +45,13 @@ class HypervisorOntology < Ontology
 
         inform(sender, Hypervisor.is_guest_running?(guest_id) ? [content] : [:not, content], reply(options))
       end
+    end
+  end
+
+  def handle_inform(sender, proposition, options = {})
+    matcher = PatternMatcher.new(@facts.enumerate)
+    if matcher.pattern_matches?(proposition, [:storage, :NUMBER, :state, :CURRENT_STATE])
+      replace [:storage, proposition[1], :state, :CURRENT_STATE], proposition[3]
     end
   end
 
