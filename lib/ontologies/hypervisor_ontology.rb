@@ -66,7 +66,7 @@ class HypervisorOntology < Ontology
         assert proposition
       end
     else
-      assert(proposition)
+      super(sender, proposition, options)
     end
   end
 
