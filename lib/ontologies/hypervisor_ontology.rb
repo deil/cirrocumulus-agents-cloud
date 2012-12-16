@@ -57,17 +57,21 @@ class HypervisorOntology < Ontology
   end
 
   def handle_inform(sender, proposition, options = {})
-    if (storage = Storage.from_fact(proposition))
-      matcher = PatternMatcher.new(@facts.enumerate)
-      bindings = matcher.match(storage.to_template)
-      if !bindings.empty?
-        replace storage.to_template, matcher.pattern_matches?(proposition, storage.to_template)
-      else
-        assert proposition
+    @classes.each do |klass|
+      if instance = klass.from_fact(proposition)
+        matcher = PatternMatcher.new(@facts.enumerate)
+        bindings = matcher.match(instance.to_template)
+        if !bindings.empty?
+          replace instance.to_template, matcher.pattern_matches?(proposition, instance.to_template)
+        else
+          assert(proposition)
+        end
+
+        return
       end
-    else
-      super(sender, proposition, options)
     end
+
+    super(sender, proposition, options)
   end
 
   def handle_request(sender, contents, options = {})
