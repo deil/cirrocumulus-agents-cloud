@@ -1,3 +1,4 @@
+require 'cirrocumulus/facts'
 require_relative '../config/xen_config'
 require_relative 'hypervisor/hypervisor'
 require_relative 'hypervisor/hypervisor_db'
