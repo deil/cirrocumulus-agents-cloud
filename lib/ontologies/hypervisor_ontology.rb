@@ -4,6 +4,12 @@ require_relative 'hypervisor/hypervisor_db'
 require_relative 'hypervisor/mac'
 require_relative 'hypervisor/mdraid'
 
+class Storage < KnowledgeClass
+  klass 'storage'
+  id :number
+  property :state
+end
+
 class HypervisorOntology < Ontology
   ontology 'hypervisor'
 
@@ -16,6 +22,8 @@ class HypervisorOntology < Ontology
   end
 
   def restore_state
+    add_knowledge_class Storage
+
     Hypervisor.connect
     Hypervisor.set_cpu(0, 10000, 0)
 
@@ -49,6 +57,11 @@ class HypervisorOntology < Ontology
   end
 
   def handle_inform(sender, proposition, options = {})
+    p proposition
+    if (storage = Storage.from_fact(proposition))
+      p storage
+    end
+
     matcher = PatternMatcher.new(@facts.enumerate)
     if matcher.pattern_matches?(proposition, [:storage, :NUMBER, :state, :CURRENT_STATE])
       replace [:storage, proposition[1], :state, :CURRENT_STATE], proposition[3]
