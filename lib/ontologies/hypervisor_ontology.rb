@@ -45,7 +45,7 @@ class HypervisorOntology < Ontology
   def collect_initial_guest_stats
     running_guests = Hypervisor.running_guests
     running_guests.each do |guest_id|
-      guest = Hypepervisor.find(guest_id)
+      guest = Hypervisor.find(guest_id)
       debug "#{guest_id}"
       debug "-> CPU = %.02f" % guest.cpu_time
       assert [:guest, guest_id, :cpu_time, guest.cpu_time]
