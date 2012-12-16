@@ -6,7 +6,7 @@ require File.join(AGENT_ROOT, 'ontologies/storage/hdd_autodiscover.rb')
 require File.join(AGENT_ROOT, 'ontologies/storage/storage_ruleset.rb')
 require_relative 'storage/storage_worker.rb'
 
-class StorageOntology < Ontology::Base
+class StorageOntology < Cirrocumulus::Ontology
   def initialize(agent)
     super('cirrocumulus-storage', agent)
 

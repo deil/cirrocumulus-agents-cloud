@@ -1,14 +1,13 @@
-require 'cirrocumulus/saga'
-require File.join(AGENT_ROOT, 'config/xen_config.rb')
+require_relative '../config/xen_config'
 require_relative 'xen/xen_db.rb'
 require_relative 'xen/xen_ruleset.rb'
 require_relative 'xen/xen_node.rb'
 require_relative 'xen/start_guest_saga.rb'
 require_relative 'xen/start_virtual_disk_saga.rb'
-require_relative 'xen/aoe.rb'
-require_relative 'xen/mdraid.rb'
-require File.join(AGENT_ROOT, 'standalone/dom_u.rb')
-require File.join(AGENT_ROOT, 'standalone/mac.rb')
+require_relative 'xen/aoe'
+require_relative 'xen/mdraid'
+require_relative 'xen/dom_u'
+require_relative 'xen/mac'
 
 class XenOntology < Ontology::Base
   attr_reader :engine

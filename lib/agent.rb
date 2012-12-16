@@ -1,5 +1,11 @@
-AGENT_ROOT = File.dirname(__FILE__)
-require File.join(AGENT_ROOT, 'config/jabber_config.rb')
-require 'rubygems'
 require 'bundler/setup'
-require 'cirrocumulus/agent_wrapper'
+require 'cirrocumulus'
+require 'cirrocumulus/remote_console'
+require_relative 'ontologies/hypervisor_ontology'
+
+Ontology.enable_console
+
+agent = Cirrocumulus::Environment.new(`hostname`.chomp)
+agent.load_ontology(HypervisorOntology.new(Agent.network('hypervisor')))
+agent.run
+agent.join

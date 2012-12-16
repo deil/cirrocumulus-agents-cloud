@@ -1,4 +1,3 @@
-require 'cirrocumulus/saga'
 require_relative 'cloud_manager/cloud_db-o1.rb'
 require_relative 'cloud_manager/cloud_ruleset.rb'
 require_relative 'cloud_manager/query_nodes_saga.rb'
@@ -7,14 +6,14 @@ require_relative 'cloud_manager/build_virtual_disk_saga.rb'
 require_relative 'cloud_manager/delete_virtual_disk_saga.rb'
 require_relative 'cloud_manager/attach_virtual_disk_saga.rb'
 require_relative 'cloud_manager/detach_virtual_disk_saga.rb'
-require File.join(AGENT_ROOT, 'ontologies/cloud_manager/build_xen_vds_saga.rb')
-require File.join(AGENT_ROOT, 'ontologies/cloud_manager/create_xen_vds_saga.rb')
-require File.join(AGENT_ROOT, 'ontologies/cloud_manager/start_vds_saga.rb')
-require File.join(AGENT_ROOT, 'ontologies/cloud_manager/stop_vds_saga.rb')
-require File.join(AGENT_ROOT, 'ontologies/cloud_manager/query_xen_vds_state_saga.rb')
+require_relative 'cloud_manager/build_xen_vds_saga.rb'
+require_relative 'cloud_manager/create_xen_vds_saga.rb'
+require_relative 'cloud_manager/start_vds_saga.rb'
+require_relative 'cloud_manager/stop_vds_saga.rb'
+require_relative 'cloud_manager/query_xen_vds_state_saga.rb'
 require_relative 'cloud_manager/reboot_xen_vds_saga.rb'
 
-class CloudManagerOntology < Ontology::Base
+class CloudManagerOntology < Cirrocumulus::Ontology
   attr_reader :engine
   
   def initialize(agent)
