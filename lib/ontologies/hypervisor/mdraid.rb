@@ -2,7 +2,6 @@ require 'systemu'
 
 class Mdraid
   def self.list_volumes()
-    Log4r::Logger['os'].debug('cat /proc/mdstat | grep "active raid1"')
     `cat /proc/mdstat | grep "active raid1"`.split("\n").map {|l| l.split(' ').first}
   end
 
@@ -20,7 +19,6 @@ class Mdraid
 
   def self.get_status(disk_number)
     cmd = "mdadm --detail /dev/md#{disk_number}"
-    Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
     return :stopped unless err.blank?
     return :active if out.include?('clean') || out.include?('active')
@@ -44,10 +42,7 @@ class Mdraid
     devices = exports_to_aoe_devices(exports)
     devices << "missing" if exports.size < 2
     cmd = "mdadm --create /dev/md#{disk_number} --force --run --level=1 --raid-devices=2 -binternal --bitmap-chunk=1024 --metadata=1.2 " + devices.join(' ')
-    Log4r::Logger['os'].info(cmd)
     _, out, err = systemu(cmd)
-    Log4r::Logger['os'].debug(out.strip)
-    Log4r::Logger['os'].debug(err.strip)
 
     err =~ /array \/dev\/md#{disk_number} started/
   end
@@ -55,10 +50,7 @@ class Mdraid
   def self.assemble(disk_number, exports)
     devices = exports_to_aoe_devices(exports)
     cmd = "mdadm --assemble /dev/md#{disk_number} " + devices.join(' ') + " --run"
-    Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
-    Log4r::Logger['os'].debug(out.strip)
-    Log4r::Logger['os'].debug(err.strip)
 
     if err.blank? || err.include?("has been started")
       return self.new(disk_number)
@@ -69,17 +61,13 @@ class Mdraid
 
   def self.stop(disk_number)
     cmd = "mdadm -S /dev/md#{disk_number}"
-    Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
-    Log4r::Logger['os'].debug(out.strip)
-    Log4r::Logger['os'].debug(err.strip)
     return err.blank? || err.include?("stopped ")
   end
 
   def self.check_aoe(disk_number)
     exports = []
     cmd = "aoe-stat"
-    Log4r::Logger['os'].debug(cmd)
     _, res = systemu(cmd)
     lines = res.split("\n")
     lines.each do |line|
@@ -173,18 +161,14 @@ class Mdraid
 
   def aoe_devices
     cmd = "cat /proc/mdstat | grep md#{disk_number}"
-    Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
-    Log4r::Logger['os'].debug(out.strip)
     results = out.scan /etherd\/e#{disk_number}\.(\d)/
     results.map {|r| "e%d.%s" % [disk_number, r.first]}
   end
   
   def component_up?(device)
     cmd = "cat /proc/mdstat | grep md#{disk_number}"
-    Log4r::Logger['os'].debug(cmd)
     _, out, err = systemu(cmd)
-    Log4r::Logger['os'].debug(out.strip)
     return (out =~ /#{device}\[\d\]\(F\)/).nil?
   end
 
