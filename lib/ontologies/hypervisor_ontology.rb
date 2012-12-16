@@ -51,8 +51,12 @@ class HypervisorOntology < Ontology
       assert [:guest, guest_id, :cpu_time, guest.cpu_time]
 
       guest.interfaces.each_with_index do |vif, idx|
-        debug "-> vif#{idx} rx=%d tx=%d" % [vif[:rx], vif[:tx]]
+        debug "-> vif#{idx} rx=%.02f tx=%.02f" % [vif[:rx]/(1024*1024*1024), vif[:tx]/(1024*1024*1024)]
         assert [:guest, guest_id, :vif, idx, :rx, vif[:rx], :tx, vif[:tx]]
+      end
+
+      guest.block.each_key do |dev|
+        debug "-> #{dev} reads=%d bytes=%.02f writes=%d bytes %.02f" % [guest.block[dev][:rd_req], guest.block[dev][:rd_bytes]/(1024*1024*1024), guest.block[dev][:wr_req], guest.block[dev][:wr_bytes]/(1024*1024*1024)]
       end
     end
   end
