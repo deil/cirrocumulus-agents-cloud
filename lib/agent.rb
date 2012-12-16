@@ -8,4 +8,5 @@ Ontology.enable_console
 agent = Cirrocumulus::Environment.new(`hostname`.chomp)
 agent.load_ontology(HypervisorOntology.new(Agent.network('hypervisor')))
 agent.run
+gets
 agent.join
