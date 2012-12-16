@@ -63,9 +63,8 @@ class HypervisorOntology < Ontology
     end
 
     matcher = PatternMatcher.new(@facts.enumerate)
-    if (bindings = matcher.pattern_matches?(proposition, storage.to_template))
+    if (bindings = matcher.match(storage.to_template))
       p bindings
-      replace [:storage, proposition[1], :state, :CURRENT_STATE], proposition[3]
     end
   end
 
