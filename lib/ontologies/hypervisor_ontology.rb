@@ -7,6 +7,10 @@ require_relative 'hypervisor/mdraid'
 class HypervisorOntology < Ontology
   ontology 'hypervisor'
 
+  rule 'storage_went_offline', [ [:storage, :NUMBER, :state, :offline] ] do |ontology, params|
+    puts "storage number #{params[:NUMBER]} went offline"
+  end
+
   def restore_state
     Hypervisor.connect
     Hypervisor.set_cpu(0, 10000, 0)
