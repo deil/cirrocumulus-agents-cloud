@@ -42,21 +42,6 @@ class HypervisorOntology < Ontology
 
   end
 
-  protected
-
-  def discover_new_disks()
-    debug "Discovering running MD devices"
-
-    Mdraid.list_disks().each do |discovered|
-      disk = VirtualDisk.find_by_disk_number(discovered)
-      next if disk
-
-      logger.info "autodiscovered virtual disk %d" % [discovered]
-      disk = VirtualDisk.new(discovered)
-      disk.save('discovered')
-    end
-  end
-
   def collect_initial_guest_stats
     running_guests = Hypervisor.running_guests
     running_guests.each do |guest_id|
@@ -69,6 +54,21 @@ class HypervisorOntology < Ontology
         debug "-> vif#{idx} rx=%d tx=%d" % [vif[:rx], vif[:tx]]
         assert [:guest, guest_id, :vif, idx, :rx, vif[:rx], :tx, vif[:tx]]
       end
+    end
+  end
+
+  protected
+
+  def discover_new_disks()
+    debug "Discovering running MD devices"
+
+    Mdraid.list_disks().each do |discovered|
+      disk = VirtualDisk.find_by_disk_number(discovered)
+      next if disk
+
+      logger.info "autodiscovered virtual disk %d" % [discovered]
+      disk = VirtualDisk.new(discovered)
+      disk.save('discovered')
     end
   end
 
