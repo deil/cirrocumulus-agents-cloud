@@ -61,7 +61,7 @@ class HypervisorOntology < Ontology
       matcher = PatternMatcher.new(@facts.enumerate)
       bindings = matcher.match(storage.to_template)
       if !bindings.empty?
-        p bindings
+        replace storage.to_template, matcher.pattern_matches?(proposition, storage.to_template)
       else
         assert proposition
       end
