@@ -1,4 +1,3 @@
-require 'cirrocumulus/facts'
 require_relative '../config/xen_config'
 require_relative 'hypervisor/hypervisor'
 require_relative 'hypervisor/hypervisor_db'
@@ -64,7 +63,8 @@ class HypervisorOntology < Ontology
     end
 
     matcher = PatternMatcher.new(@facts.enumerate)
-    if matcher.pattern_matches?(proposition, [:storage, :NUMBER, :state, :CURRENT_STATE])
+    if (bindings = matcher.pattern_matches?(proposition, storage.to_template))
+      p bindings
       replace [:storage, proposition[1], :state, :CURRENT_STATE], proposition[3]
     end
   end
