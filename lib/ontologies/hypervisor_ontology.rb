@@ -10,6 +10,9 @@ class HypervisorOntology < Ontology
   rule 'init', [[:just_started]] do |ontology, params|
     Hypervisor.connect
     Hypervisor.set_cpu(0, 10000, 0)
+
+    ontology.collect_initial_guest_stats
+
     ontology.retract [:just_started]
   end
 
@@ -17,7 +20,6 @@ class HypervisorOntology < Ontology
     assert [:just_started]
 
     discover_new_disks
-    collect_initial_guest_stats
   end
 
   def handle_query(sender, expression, options = {})
@@ -40,7 +42,7 @@ class HypervisorOntology < Ontology
 
   end
 
-  private
+  protected
 
   def discover_new_disks()
     debug "Discovering running MD devices"
