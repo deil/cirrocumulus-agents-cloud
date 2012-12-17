@@ -75,7 +75,8 @@ class HypervisorOntology < Ontology
   end
 
   def handle_request(sender, contents, options = {})
-
+    action = contents[0]
+    p action
   end
 
   protected

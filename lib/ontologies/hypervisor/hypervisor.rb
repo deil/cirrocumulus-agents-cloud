@@ -77,5 +77,20 @@ class Hypervisor
 
       nil
     end
+
+    def reboot(guest_id)
+      perform_cmd("virsh reboot #{guest_id}")
+    end
+
+    def reset(guest_id)
+      perform_cmd("xm reset #{guest_id}")
+    end
+
+    protected
+
+    def perform_cmd(cmd, log_output = true)
+      _, out, err = systemu(cmd)
+      err.blank?
+    end
   end
 end
