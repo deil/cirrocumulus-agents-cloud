@@ -76,7 +76,16 @@ class HypervisorOntology < Ontology
 
   def handle_request(sender, contents, options = {})
     action = contents[0]
-    p action
+    if action == :reboot
+      object = contents[1]
+      if object.first == :guest
+        guest = object[1]
+        guest_id = guest[1].chomp
+
+        Hypervisor.reset(guest_id)
+        inform(sender, contents, reply(options))
+      end
+    end
   end
 
   protected
