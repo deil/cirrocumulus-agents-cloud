@@ -13,6 +13,10 @@ end
 class HypervisorOntology < Ontology
   ontology 'hypervisor'
 
+  rule 'storage_went_offline', [ Storage.new(:state => :offline) ] do |ontology, params|
+
+  end
+
   rule 'storage_went_offline', [ [:storage, :NUMBER, :state, :offline] ] do |ontology, params|
     puts "storage number #{params[:NUMBER]} went offline"
   end
@@ -57,20 +61,6 @@ class HypervisorOntology < Ontology
   end
 
   def handle_inform(sender, proposition, options = {})
-    @classes.each do |klass|
-      if instance = klass.from_fact(proposition)
-        matcher = PatternMatcher.new(@facts.enumerate)
-        bindings = matcher.match(instance.to_template)
-        if !bindings.empty?
-          replace instance.to_template, matcher.pattern_matches?(proposition, instance.to_template)
-        else
-          assert(proposition)
-        end
-
-        return
-      end
-    end
-
     super(sender, proposition, options)
   end
 
@@ -83,7 +73,7 @@ class HypervisorOntology < Ontology
         guest_id = guest[1].chomp
 
         Hypervisor.reset(guest_id)
-        inform(sender, contents, reply(options))
+        agree(sender, contents, reply(options))
       end
     end
   end
