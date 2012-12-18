@@ -14,14 +14,10 @@ class HypervisorOntology < Ontology
   ontology 'hypervisor'
 
   rule 'storage_went_offline', [ Storage.new(:state => :offline) ] do |ontology, params|
-
-  end
-
-  rule 'storage_went_offline', [ [:storage, :NUMBER, :state, :offline] ] do |ontology, params|
     puts "storage number #{params[:NUMBER]} went offline"
   end
 
-  rule 'storage_goes_online', [ [:storage, :NUMBER, :state, :online] ] do |ontology, params|
+  rule 'storage_goes_online', [ Storage.new(:state => :online) ] do |ontology, params|
     puts "storage number #{params[:NUMBER]} goes online"
   end
 
