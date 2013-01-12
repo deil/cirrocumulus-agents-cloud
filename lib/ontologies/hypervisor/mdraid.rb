@@ -191,7 +191,7 @@ class Mdraid
   def component_up?(device)
     marker_found = false
     (23..@data.size).each do |idx|
-      line = @data[idz].split(' ')
+      line = @data[idx].split(' ')
       marker_found = true if line.size == 5 && line[0] == 'Number' && line[4] == 'State'
 
       next unless marker_found
