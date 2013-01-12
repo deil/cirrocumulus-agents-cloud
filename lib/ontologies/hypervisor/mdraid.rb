@@ -4,6 +4,7 @@ class Mdraid
   class << self
     def readd_exports(storage_number)
       puts "Re-adding exports from storage #{storage_number}"
+      processed = 0
 
       self.list_disks.each do |disk_number|
         md = Mdraid.new(disk_number)
@@ -14,8 +15,11 @@ class Mdraid
           end
 
           md.add(device)
+          processed += 1
         end
       end
+
+      puts "Done re-adding exports. Updated #{processed} disks"
     end
 
     def fail_exports(storage_number)
