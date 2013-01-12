@@ -225,15 +225,21 @@ class Mdraid
   end
 
   def add(aoe_device)
-    puts("mdadm /dev/md#{self.disk_number} --add /dev/etherd/#{aoe_device}")
+    cmd = "mdadm /dev/md#{self.disk_number} --add /dev/etherd/#{aoe_device}"
+    puts cmd
+    system(cmd)
   end
 
   def fail(aoe_device)
-    puts("mdadm /dev/md#{self.disk_number} --fail /dev/etherd/#{aoe_device}")
+    cmd = "mdadm /dev/md#{self.disk_number} --fail /dev/etherd/#{aoe_device}"
+    puts cmd
+    system(cmd)
   end
 
   def remove(aoe_device)
-    puts("mdadm /dev/md#{self.disk_number} --remove /dev/etherd/#{aoe_device}")
+    cmd = "mdadm /dev/md#{self.disk_number} --remove /dev/etherd/#{aoe_device}"
+    puts cmd
+    system(cmd)
   end
 
   private
