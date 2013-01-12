@@ -15,10 +15,12 @@ class HypervisorOntology < Ontology
 
   rule 'storage_went_offline', [ Storage.new(:state => :offline) ] do |ontology, params|
     puts "storage number #{params[:NUMBER]} went offline"
+    Mdraid.fail_exports(params[:NUMBER].to_i)
   end
 
   rule 'storage_goes_online', [ Storage.new(:state => :online) ] do |ontology, params|
     puts "storage number #{params[:NUMBER]} goes online"
+    Mdraid.readd_exports(params[:NUMBER].to_i)
   end
 
   def restore_state

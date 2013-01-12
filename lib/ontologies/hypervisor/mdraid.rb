@@ -1,6 +1,16 @@
 require 'systemu'
 
 class Mdraid
+  class << self
+    def readd_exports(storage_number)
+      puts "Re-adding exports from storage #{storage_number}"
+    end
+
+    def fail_exports(storage_number)
+      puts "Failing exports from storage #{storage_number}"
+    end
+  end
+
   def self.list_volumes()
     `cat /proc/mdstat | grep "active raid1"`.split("\n").map {|l| l.split(' ').first}
   end
