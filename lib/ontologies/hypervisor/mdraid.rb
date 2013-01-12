@@ -190,7 +190,7 @@ class Mdraid
   
   def component_up?(device)
     marker_found = false
-    (23..@data.size-1).each do |idx|
+    (21..@data.size-1).each do |idx|
       line = @data[idx].split(' ')
       marker_found = true if line.size == 5 && line[0] == 'Number' && line[4] == 'State'
 
@@ -205,9 +205,9 @@ class Mdraid
       if raid_device =~ Regexp.new(device)
         return true if line[5] != 'faulty spare'
       end
-
-      false
     end
+
+    false
   end
 
   def add(aoe_device)
