@@ -9,7 +9,7 @@ class Mdraid
         md = Mdraid.new(disk_number)
         device = "e#{disk_number}.#{storage_number}"
         if !md.component_up?(device)
-          if !md.aoe_devices.include?(device)
+          if md.aoe_devices.include?(device)
             md.remove(device)
           end
 
