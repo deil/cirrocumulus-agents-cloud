@@ -182,10 +182,24 @@ class Mdraid
   end
 
   def aoe_devices
-    cmd = "cat /proc/mdstat | grep md#{disk_number}"
-    _, out, err = systemu(cmd)
-    results = out.scan /etherd\/e#{disk_number}\.(\d)/
-    results.map {|r| "e%d.%s" % [disk_number, r.first]}
+    result = []
+    marker_found = false
+    (21..@data.size-1).each do |idx|
+      line = @data[idx].split(' ')
+      marker_found = true if line.size == 5 && line[0] == 'Number' && line[4] == 'State'
+
+      next unless marker_found
+
+      line = @data[idx].split(/ {2,}/)
+      next if line.size < 7
+
+      raid_device = line[6]
+      raid_device = File.readlink(raid_device) if raid_device =~ /\/dev\/block\//
+      aoe_device = raid_device.scan /etherd\/e#{self.disk_number}\.(\d)/
+      result << "e#{self.disk_number}.#{aoe_device[0][0]}"
+    end
+
+    result
   end
   
   def component_up?(device)
