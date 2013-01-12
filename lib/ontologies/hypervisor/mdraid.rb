@@ -4,6 +4,18 @@ class Mdraid
   class << self
     def readd_exports(storage_number)
       puts "Re-adding exports from storage #{storage_number}"
+
+      self.list_disks.each do |disk_number|
+        md = Mdraid.new(disk_number)
+        device = "e#{disk_number}.#{storage_number}"
+        if !md.component_up?(device)
+          if !md.aoe_devices.include?(device)
+            md.remove(device)
+          end
+
+          md.add(device)
+        end
+      end
     end
 
     def fail_exports(storage_number)
@@ -177,9 +189,34 @@ class Mdraid
   end
   
   def component_up?(device)
-    cmd = "cat /proc/mdstat | grep md#{disk_number}"
-    _, out, err = systemu(cmd)
-    return (out =~ /#{device}\[\d\]\(F\)/).nil?
+    marker_found = false
+    (23..@data.size).each do |idx|
+      line = @data[idz].split(' ')
+      marker_found = true if line.size == 5 && line[0] == 'Number' && line[4] == 'State'
+
+      next unless marker_found
+
+      line = @data[idx].split(/ {2,}/)
+      next if line.size < 7
+
+      if line[6] =~ Regexp.new(device)
+        return true if line[5] != 'faulty spare'
+      end
+
+      false
+    end
+  end
+
+  def add(aoe_device)
+    puts("mdadm /dev/md#{self.disk_number} --add /dev/etherd/#{aoe_device}")
+  end
+
+  def fail(aoe_device)
+    puts("mdadm /dev/md#{self.disk_number} --fail /dev/etherd/#{aoe_device}")
+  end
+
+  def remove(aoe_device)
+    puts("mdadm /dev/md#{self.disk_number} --remove /dev/etherd/#{aoe_device}")
   end
 
   private

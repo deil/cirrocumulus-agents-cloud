@@ -13,11 +13,13 @@ end
 class HypervisorOntology < Ontology
   ontology 'hypervisor'
 
+  # (inform (receiver (agent_identifier name "c001v3-hypervisor")) (content (storage 2 state offline)))
   rule 'storage_went_offline', [ Storage.new(:state => :offline) ] do |ontology, params|
     puts "storage number #{params[:NUMBER]} went offline"
     Mdraid.fail_exports(params[:NUMBER].to_i)
   end
 
+  # (inform (receiver (agent_identifier name "c001v3-hypervisor")) (content (storage 2 state online)))
   rule 'storage_goes_online', [ Storage.new(:state => :online) ] do |ontology, params|
     puts "storage number #{params[:NUMBER]} goes online"
     Mdraid.readd_exports(params[:NUMBER].to_i)
