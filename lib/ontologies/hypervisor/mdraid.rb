@@ -190,7 +190,7 @@ class Mdraid
   
   def component_up?(device)
     marker_found = false
-    (23..@data.size).each do |idx|
+    (23..@data.size-1).each do |idx|
       line = @data[idx].split(' ')
       marker_found = true if line.size == 5 && line[0] == 'Number' && line[4] == 'State'
 
@@ -199,7 +199,10 @@ class Mdraid
       line = @data[idx].split(/ {2,}/)
       next if line.size < 7
 
-      if line[6] =~ Regexp.new(device)
+      raid_device = line[6]
+      raid_device = File.readlink(raid_device) if raid_device =~ /\/dev\/block\//
+
+      if raid_device =~ Regexp.new(device)
         return true if line[5] != 'faulty spare'
       end
 
