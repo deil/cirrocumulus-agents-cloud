@@ -35,6 +35,15 @@ class HypervisorOntology < Ontology
     collect_initial_guest_stats
   end
 
+  def tick
+    @tick_counter += 1
+    return if @tick_counter < 60
+
+    update_guest_stats
+
+    @tick_counter = 0
+  end
+
   def handle_query(sender, expression, options = {})
     if expression == [:free_memory]
       inform(sender, [[:free_memory], Hypervisor.free_memory], reply(options))
@@ -107,6 +116,30 @@ class HypervisorOntology < Ontology
 
       guest.block.each_key do |dev|
         assert [:guest, guest_id, :block_device, dev, :reads, guest.block[dev][:rd_req], :rd_bytes, guest.block[dev][:rd_bytes], :writes, guest.block[dev][:wr_req], :wr_bytes, guest.block[dev][:wr_bytes]]
+      end
+    end
+  end
+
+  def update_guest_stats
+    running_guests = Hypervisor.running_guests
+    running_guests.each do |guest_id|
+      guest = Hypervisor.find(guest_id)
+      replace [:guest, guest_id, :cpu_time, :CPU_TIME], guest.cpu_time
+
+      guest.interfaces.each_with_index do |vif, idx|
+        replace [:guest, guest_id, :vif, idx, :rx, :RX, :tx, :TX], {
+            :RX => vif[:rx],
+            :TX => vif[:tx]
+        }
+      end
+
+      guest.block.each_key do |dev|
+        replace [:guest, guest_id, :block_device, dev, :reads, :RD_REQ, :rd_bytes, :RD_BYTES, :writes, :WR_REQ, :wr_bytes, :WR_BYTES], {
+            :RD_REQ => guest.block[dev][:rd_req],
+            :RD_BYTES => guest.block[dev][:rd_bytes],
+            :WR_REQ => guest.block[dev][:wr_req],
+            :WR_BYTES => guest.block[dev][:wr_bytes]
+        }
       end
     end
   end
