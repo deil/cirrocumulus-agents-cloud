@@ -42,6 +42,8 @@ class HypervisorOntology < Ontology
       inform(sender, [[:used_memory], Hypervisor.total_memory - Hypervisor.free_memory], reply(options))
     elsif expression == [:guests_count]
       inform(sender, [[:guests_count], Hypervisor.running_guests.size], reply(options))
+    elsif expression == [:guests]
+      inform(sender, [[:guests], Hypervisor.running_guests], reply(options))
     else
       super(sender, expression, options)
     end
