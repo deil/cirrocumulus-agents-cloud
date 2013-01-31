@@ -33,6 +33,8 @@ class HypervisorOntology < Ontology
 
     discover_new_disks
     collect_initial_guest_stats
+
+    @tick_counter = 0
   end
 
   def tick
