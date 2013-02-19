@@ -67,7 +67,7 @@ class HypervisorOntology < Ontology
       object = proposition[1]
       if object.first == :guest
         guest = object[1]
-        guest_id = guest[1].chomp
+        guest_id = object[1].chomp
 
         inform(sender, Hypervisor.is_guest_running?(guest_id) ? [proposition] : [:not, proposition], reply(options))
       end
