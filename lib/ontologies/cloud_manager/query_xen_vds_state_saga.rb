@@ -10,9 +10,15 @@ class QueryXenVdsStateSaga < Saga
     @vds_uid = vds_uid
     @message = message
 
-    Log4r::Logger['kb'].info "++ Starting saga #{id}: Query VDS #{vds_uid} state"
-    @ontology.engine.replace [:vds, vds_uid, :actual_state, :STATE], :querying
-    handle()
+    Log4r::Logger['ontology::cloud'].info "++ Starting saga #{id}: Query VDS #{vds_uid} state"
+    @ontology.replace [:vds, vds_uid, :actual_state, :STATE], :querying
+
+    query_all_nodes
+    timeout(60)
+    change_state(STATE_WAITING_FOR_REPLY)
+  end
+
+  def handle_reply(sender, contents, options = {})
   end
 
   def handle(message = nil)
@@ -47,4 +53,11 @@ class QueryXenVdsStateSaga < Saga
         end
     end
   end
+
+  private
+
+  def query_all_nodes
+    query_if(Agent.all, [:running, [:guest, self.vds_uid]], :ontology => 'hypervisor')
+  end
+
 end
