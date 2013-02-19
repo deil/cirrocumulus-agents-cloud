@@ -26,6 +26,8 @@ class HypervisorOntology < Ontology
   end
 
   def restore_state
+    @logger = Log4r::Logger['ontology::hypervisor']
+
     add_knowledge_class Storage
 
     Hypervisor.connect
@@ -92,6 +94,8 @@ class HypervisorOntology < Ontology
   end
 
   protected
+
+  attr_reader :logger
 
   def discover_new_disks()
     debug "Discovering running MD devices"
