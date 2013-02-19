@@ -32,7 +32,8 @@ class Hypervisor
 
     def is_guest_running?(guest_id)
       @@libvirt.lookup_domain_by_name(guest_id)
-    rescue
+    rescue Exception => ex
+      puts ex.to_s
       false
     end
 
