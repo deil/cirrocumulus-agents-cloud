@@ -63,14 +63,13 @@ class HypervisorOntology < Ontology
   end
 
   def handle_query_if(sender, proposition, options = {})
-    content = proposition[0]
-    if content.first == :running
-      object = content[1]
+    if proposition.first == :running
+      object = proposition[1]
       if object.first == :guest
         guest = object[1]
         guest_id = guest[1].chomp
 
-        inform(sender, Hypervisor.is_guest_running?(guest_id) ? [content] : [:not, content], reply(options))
+        inform(sender, Hypervisor.is_guest_running?(guest_id) ? [proposition] : [:not, proposition], reply(options))
       end
     end
   end
