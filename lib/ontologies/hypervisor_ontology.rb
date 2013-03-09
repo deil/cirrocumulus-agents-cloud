@@ -86,6 +86,8 @@ class HypervisorOntology < Ontology
         guest = object[1]
         guest_id = guest[1].chomp
 
+        Log4r::Logger['ontology::hypervisor'].info "Request: reboot #{guest_id}"
+
         if Hypervisor.is_guest_running?(guest_id)
           Hypervisor.reset(guest_id)
           agree(sender, contents, reply(options))
