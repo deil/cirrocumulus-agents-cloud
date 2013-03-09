@@ -86,8 +86,12 @@ class HypervisorOntology < Ontology
         guest = object[1]
         guest_id = guest[1].chomp
 
-        Hypervisor.reset(guest_id)
-        agree(sender, contents, reply(options))
+        if Hypervisor.is_guest_running?(guest_id)
+          Hypervisor.reset(guest_id)
+          agree(sender, contents, reply(options))
+        else
+          refuse(sender, [contents, :guest_not_running], reply(options))
+        end
       end
     end
   end
