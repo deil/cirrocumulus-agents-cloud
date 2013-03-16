@@ -33,6 +33,9 @@
   <logger name="ontology::factory" level="ALL" additive="false" trace="false">
   </logger>
 
+  <logger name="ontology::storage" level="ALL" additive="false" trace="false">
+  </logger>
+
   <logger name="agent" level="ALL" additive="false" trace="false">
     <outputter>console</outputter>
   </logger>
