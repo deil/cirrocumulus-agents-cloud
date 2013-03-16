@@ -1,5 +1,5 @@
 <log4r_config>
-  <outputter name="console" type="StdoutOutputter" level="INFO">
+  <outputter name="console" type="StdoutOutputter" level="DEBUG">
     <formatter type="Log4r::PatternFormatter">
       <pattern>=>[%5l %d] %C: %M</pattern>
     </formatter>
@@ -17,10 +17,9 @@
   </logger>
 
   <logger name="channels::jabber" level="ALL" additive="false" trace="false">
-    <outputter>console</outputter>
   </logger>
 
-  <logger name="ontology" level="INFO" additive="false" trace="false">
+  <logger name="ontology" level="ALL" additive="false" trace="false">
     <outputter>console</outputter>
   </logger>
 
@@ -29,7 +28,9 @@
   </logger>
 
   <logger name="ontology::hypervisor" level="ALL" additive="false" trace="false">
-    <outputter>console</outputter>
+  </logger>
+
+  <logger name="ontology::factory" level="ALL" additive="false" trace="false">
   </logger>
 
   <logger name="agent" level="ALL" additive="false" trace="false">
