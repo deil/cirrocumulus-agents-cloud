@@ -28,6 +28,23 @@ class StorageOntology < Ontology
     logger.info 'This storage handles %d virtual disks with total size of %d Gb' % [all_disks_count, total_disks_size]
   end
 
+  def tick
+    super.tick
+
+    @tick_counter += 1
+    return if @tick_counter < 300
+
+    storage_info = @storage_information.collect()
+    replace [:storage, :free_space, :FREE_SPACE], storage_info[:lvm][:free]
+    storage_info[:hdd].each do |hdd|
+      replace [:hdd, hdd.device, :sn, :SN], hdd.sn
+      replace [:hdd, hdd.device, :temperature, :TEMP], hdd.temperature
+      replace [:hdd, hdd.device, :health, :STATUS], hdd.health
+    end
+
+    @tick_counter = 0
+  end
+
   protected
 
   def handle_message(message, kb)
@@ -101,7 +118,7 @@ class StorageOntology < Ontology
       next if disk
 
       disk_size = StorageNode.volume_size(volume)
-      logger.info "autodiscovered virtual disk %d with size %d Mb" % [volume, disk_size]
+      logger.info 'autodiscovered virtual disk %d with size %d Mb' % [volume, disk_size]
       disk = VirtualDisk.new(volume, disk_size)
       disk.save('discovered')
     end
@@ -109,14 +126,14 @@ class StorageOntology < Ontology
 
   # Restores states of recorded virtual disks. It can bring up or take down corresponding export!
   def restore_exports_states
-    logger.debug "Restoring exports states."
+    logger.debug 'Restoring exports states.'
 
     changes_made = 0
     known_disks = VirtualDisk.all
 
     known_disks.each do |disk|
       if !StorageNode.volume_exists?(disk.disk_number)
-        logger.info "Volume for disk number %d does not exist, removing from database" % [disk.disk_number]
+        logger.info 'volume for disk number %d does not exist, removing from database' % [disk.disk_number]
         state = VirtualDiskState.find_by_disk_number(disk.disk_number)
         state.delete if state
         disk.delete
@@ -125,7 +142,7 @@ class StorageOntology < Ontology
         export_is_up = StorageNode.is_exported?(disk.disk_number)
 
         if state.nil?
-          logger.info "adding state record for virtual disk %d: %s" % [disk.disk_number, export_is_up]
+          logger.info 'adding state record for virtual disk %d: %s' % [disk.disk_number, export_is_up]
           state = VirtualDiskState.new(disk.disk_number, export_is_up)
           state.save('discovered')
           next
@@ -139,7 +156,7 @@ class StorageOntology < Ontology
           changes_made += 1
         elsif !export_should_be_up && export_is_up
           logger.info "shutting down export #{disk.disk_number}"
-          #StorageNode.remove_export(disk.disk_number)
+          StorageNode.remove_export(disk.disk_number)
           changes_made += 1
         end
       end
