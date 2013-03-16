@@ -80,21 +80,21 @@ class StorageOntology < Ontology
   # Looks at LVM volume name and discovers underlying MD and HDD devices.
   # It also collects some critical information about storage subsystem (e.g. free space)
   def autodiscover_devices
-    logger.debug "Discovering information about storage subsystem (HDD and MD devices)"
+    logger.debug 'Discovering information about storage subsystem (HDD and MD devices)'
     @storage_information = HddAutodiscover.new(STORAGE_CONFIG[:volume_name])
     collected = @storage_information.collect()
 
-    @engine.assert [:storage, :free_space, collected[:lvm][:free]]
+    assert [:storage, :free_space, collected[:lvm][:free]]
     collected[:hdd].each do |hdd|
-      @engine.assert [:hdd, hdd.device, :sn, hdd.sn]
-      @engine.assert [:hdd, hdd.device, :temperature, hdd.temperature]
-      @engine.assert [:hdd, hdd.device, :health, hdd.health]
+      assert [:hdd, hdd.device, :sn, hdd.sn]
+      assert [:hdd, hdd.device, :temperature, hdd.temperature]
+      assert [:hdd, hdd.device, :health, hdd.health]
     end
   end
 
   # Looks through storage subsystem and searches for new virtual disk volumes, not recorded in internal database
   def discover_new_disks
-    logger.debug "Discovering new virtual disks."
+    logger.debug 'Discovering new virtual disks.'
 
     StorageNode.list_disks().each do |volume|
       disk = VirtualDisk.find_by_disk_number(volume)
@@ -139,7 +139,7 @@ class StorageOntology < Ontology
           changes_made += 1
         elsif !export_should_be_up && export_is_up
           logger.info "shutting down export #{disk.disk_number}"
-          StorageNode.remove_export(disk.disk_number)
+          #StorageNode.remove_export(disk.disk_number)
           changes_made += 1
         end
       end
