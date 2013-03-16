@@ -1,11 +1,9 @@
 require 'cirrocumulus/ontology'
 
-require File.join(AGENT_ROOT, 'config/storage_config.rb')
-require File.join(AGENT_ROOT, 'ontologies/storage/storage_db.rb')
-require "#{AGENT_ROOT}/standalone/linux/#{STORAGE_CONFIG[:backend]}/storage_node.rb"
-require File.join(AGENT_ROOT, 'ontologies/storage/hdd.rb')
-require File.join(AGENT_ROOT, 'ontologies/storage/hdd_autodiscover.rb')
-require File.join(AGENT_ROOT, 'ontologies/storage/storage_ruleset.rb')
+require_relative '../config/storage_config'
+require_relative 'storage/storage_db'
+require_relative 'storage/hdd'
+require_relative 'storage/hdd_autodiscover'
 require_relative 'storage/storage_worker.rb'
 
 class StorageOntology < Ontology
