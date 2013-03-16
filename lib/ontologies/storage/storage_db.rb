@@ -82,5 +82,5 @@ end
 
 ActiveRecord::Base.establish_connection(
   :adapter => 'sqlite3',
-  :database => "#{AGENT_ROOT}/databases/storage.sqlite"
+  :database => '../databases/storage.sqlite'
 )
