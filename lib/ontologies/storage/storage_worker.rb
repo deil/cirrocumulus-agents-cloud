@@ -1,4 +1,4 @@
-require "#{AGENT_ROOT}/standalone/linux/#{STORAGE_CONFIG[:backend]}/storage_node.rb"
+require_relative '../../standalone/linux/lvm/storage_node'
 
 # Worker class for Storage ontology. Performs low-level operations
 class StorageWorker

@@ -1,3 +1,5 @@
+require 'cirrocumulus/ontology'
+
 require File.join(AGENT_ROOT, 'config/storage_config.rb')
 require File.join(AGENT_ROOT, 'ontologies/storage/storage_db.rb')
 require "#{AGENT_ROOT}/standalone/linux/#{STORAGE_CONFIG[:backend]}/storage_node.rb"
@@ -6,33 +8,26 @@ require File.join(AGENT_ROOT, 'ontologies/storage/hdd_autodiscover.rb')
 require File.join(AGENT_ROOT, 'ontologies/storage/storage_ruleset.rb')
 require_relative 'storage/storage_worker.rb'
 
-class StorageOntology < Cirrocumulus::Ontology
-  def initialize(agent)
-    super('cirrocumulus-storage', agent)
+class StorageOntology < Ontology
+  ontology 'storage'
 
-    logger.info "Starting StorageOntology.."
-    @engine = StorageRuleset.new(self)
-    @worker = StorageWorker.new
+  def restore_state
     @tick_counter = 0
+    @worker = StorageWorker.new
+    logger.info 'My storage number is %d' % storage_number
 
-    logger.info "My storage number is %d" % [storage_number()]
-  end
-
-  def restore_state()
-    @engine.start()
-
-    logger.info "Restoring previous state"
+    logger.info 'Restoring previous state'
     changes_made = 0
 
     autodiscover_devices()
     discover_new_disks()
     changes_made += restore_exports_states()
 
-    logger.info "State restored, made %d changes to node configuration" % [changes_made]
+    logger.info 'State restored, made %d changes to node configuration' % [changes_made]
 
     all_disks_count = VirtualDisk.all.size
     total_disks_size = VirtualDisk.all.sum(&:size)/1024
-    logger.info "This storage handles %d virtual disks with total size of %d Gb" % [all_disks_count, total_disks_size]
+    logger.info 'This storage handles %d virtual disks with total size of %d Gb' % [all_disks_count, total_disks_size]
   end
 
   protected
@@ -263,6 +258,8 @@ class StorageOntology < Cirrocumulus::Ontology
     msg.ontology = self.name
     self.agent.reply_to_message(msg, message)
   end
-end
 
-Log4r::Logger['agent'].info "storage backend = #{STORAGE_CONFIG[:backend]}"
+  def logger
+    Log4r::Logger['ontology::storage']
+  end
+end
