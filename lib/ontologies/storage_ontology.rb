@@ -96,7 +96,7 @@ class StorageOntology < Ontology
           params = create_r[:volume]
           result = @worker.create_volume(params[:disk_number], params[:size], sender.to_s)
         elsif create_r.has_key?(:export)
-          params = create_r[:volume]
+          params = create_r[:export]
           disk_slot = params[:slot] || storage_number
           result = @worker.create_export(params[:disk_number], disk_slot, sender.to_s)
         end
