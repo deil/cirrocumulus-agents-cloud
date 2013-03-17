@@ -45,6 +45,16 @@ class StorageOntology < Ontology
     @tick_counter = 0
   end
 
+  def handle_query(sender, expression, options = {})
+    if expression == [:free_space]
+      inform(sender, [expression, StorageNode.free_space])
+    elsif expression == [:used_space]
+      inform(sender, [expression, StorageNode.used_space])
+    else
+      super
+    end
+  end
+
   protected
 
   def handle_message(message, kb)
@@ -145,16 +155,6 @@ class StorageOntology < Ontology
     end
 
     changes_made
-  end
-
-  def handle_query(sender, expression, options = {})
-    if expression == [:free_space]
-      inform(sender, [expression, StorageNode.free_space])
-    elsif expression == [:used_space]
-      inform(sender, [expression, StorageNode.used_space])
-    else
-      super
-    end
   end
 
   def query(obj)
