@@ -103,9 +103,9 @@ class StorageOntology < Ontology
 
         action = result[:action]
         if action == :failure
-          failure(sender, [contents, result[:reason]], reply(options))
+          failure(sender, contents, result[:reason], reply(options))
         elsif action == :refuse
-          refuse(sender, [contents, result[:reason]], reply(options))
+          refuse(sender, contents, result[:reason], reply(options))
         elsif action == :agree
           agree(sender, contents, reply(options))
         end
