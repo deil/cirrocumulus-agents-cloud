@@ -148,7 +148,13 @@ class StorageOntology < Ontology
   end
 
   def handle_query(sender, expression, options = {})
-    super
+    if expression == [:free_space]
+      inform(sender, [expression, StorageNode.free_space])
+    elsif expression == [:used_space]
+      inform(sender, [expression, StorageNode.used_space])
+    else
+      super
+    end
   end
 
   def query(obj)
