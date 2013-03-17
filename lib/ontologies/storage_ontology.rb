@@ -29,7 +29,7 @@ class StorageOntology < Ontology
   end
 
   def tick
-    super.tick
+    super()
 
     @tick_counter += 1
     return if @tick_counter < 300
@@ -66,24 +66,6 @@ class StorageOntology < Ontology
         handle_request(message)
     end
   end
-
-  def handle_tick()
-    if @tick_counter >= 60
-      storage_info = @storage_information.collect()
-      @engine.replace [:storage, :free_space, :FREE_SPACE], storage_info[:lvm][:free]
-      storage_info[:hdd].each do |hdd|
-        @engine.replace [:hdd, hdd.device, :sn, :SN], hdd.sn
-        @engine.replace [:hdd, hdd.device, :temperature, :TEMP], hdd.temperature
-        @engine.replace [:hdd, hdd.device, :health, :STATUS], hdd.health
-      end
-
-      @tick_counter = 0
-    else
-      @tick_counter += 1
-    end
-  end
-
-  private
 
   def storage_number
     hostname = `hostname`
