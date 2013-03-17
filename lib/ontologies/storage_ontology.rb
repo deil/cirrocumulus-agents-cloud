@@ -55,6 +55,32 @@ class StorageOntology < Ontology
     end
   end
 
+  def handle_query_if(sender, proposition, options = {})
+    data = parse_params(proposition)
+    if data.has_key?(:exists)
+      exists_q = data[:exists]
+      if exists_q.has_key?(:volume)
+        params = exists_q[:volume]
+        disk_number = params[:disk_number]
+        if StorageNode.volume_exists?(disk_number)
+          inform(sender, proposition, reply(options))
+        else
+          inform(sender, [:not, proposition], reply(options))
+        end
+      elsif exists_q.has_key?(:export)
+        params = exists_q[:volume]
+        disk_number = params[:disk_number]
+        if StorageNode.is_exported?(disk_number)
+          inform(sender, proposition, reply(options))
+        else
+          inform(sender, [:not, proposition], reply(options))
+        end
+      end
+    end
+
+    super
+  end
+
   protected
 
   def handle_message(message, kb)
@@ -155,28 +181,6 @@ class StorageOntology < Ontology
     end
 
     changes_made
-  end
-
-  def query(obj)
-    msg = Cirrocumulus::Message.new(nil, 'inform', nil)
-
-    if obj.first == :free_space
-      msg.content = [:'=', obj, [StorageNode.free_space]]
-    elsif obj.first == :used_space
-      msg.content = [:'=', obj, [StorageNode.used_space]]
-    end
-
-    msg
-  end
-
-  def query_if(obj)
-    msg = Cirrocumulus::Message.new(nil, 'inform', nil)
-
-    if obj.first == :exists
-      msg.content = handle_exists_query(obj) ? obj : [:not, obj]
-    end
-
-    msg
   end
 
   # (exists (.. (disk_number ..)))
