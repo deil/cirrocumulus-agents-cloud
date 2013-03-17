@@ -9,7 +9,7 @@ class StorageWorker
     if StorageNode::create_volume(disk_number, disk_size)
       disk = VirtualDisk.new(disk_number, disk_size)
       disk.save('cirrocumulus', origin)
-      return {:action => :inform, :reason => :finished}
+      return {:action => :agree, :reason => :finished}
     else
       return {:action => :failure, :reason => :unknown_reason}
     end

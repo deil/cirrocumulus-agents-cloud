@@ -81,27 +81,42 @@ class StorageOntology < Ontology
     super
   end
 
-  protected
+  def handle_request(sender, contents, options = {})
+    if !handle_saga_reply(sender, :request, contents, options)
+      data = parse_params(contents)
 
-  def handle_message(message, kb)
-    case message.act
-      when 'inform'
-        @engine.assert message.content if !@engine.query message.content
+      if data.has_key?(:create)
+        create_r = data[:create]
+        result = {}
+        if create_r.has_key?(:disk)
+          params = create_r[:disk]
+          disk_slot = params[:slot] || storage_number
+          result = @worker.create_disk(params[:disk_number], disk_slot, params[:size], sender.to_s)
+        elsif create_r.has_key?(:volume)
+          params = create_r[:volume]
+          result = @worker.create_volume(params[:disk_number], params[:size], sender.to_s)
+        elsif create_r.has_key?(:export)
+          params = create_r[:volume]
+          disk_slot = params[:slot] || storage_number
+          result = @worker.create_export(params[:disk_number], disk_slot, sender.to_s)
+        end
 
-      when 'query-ref'
-        msg = query(message.content)
-        msg.ontology = self.name
-        self.agent.reply_to_message(msg, message)
+        action = result[:action]
+        if action == :failure
+          failure(sender, [contents, result[:reason]], reply(options))
+        elsif action == :refuse
+          refuse(sender, [contents, result[:reason]], reply(options))
+        elsif action == :agree
+          agree(sender, contents, reply(options))
+        end
 
-      when 'query-if'
-        msg = query_if(message.content)
-        msg.ontology = self.name
-        self.agent.reply_to_message(msg, message)
-
-      when 'request'
-        handle_request(message)
+      elsif data.has_key?(:delete)
+        delete_r = data[:delete]
+      end
     end
   end
+
+  protected
 
   def storage_number
     hostname = `hostname`
@@ -181,70 +196,6 @@ class StorageOntology < Ontology
     end
 
     changes_made
-  end
-
-  # (exists (.. (disk_number ..)))
-  def handle_exists_query(obj)
-    obj.each do |param|
-      next if !param.is_a?(Array)
-      if param.first.is_a?(Symbol)
-        obj_type = param.first
-        disk_number = nil
-        param.each do |dparam|
-          next if !dparam.is_a?(Array)
-          if dparam.first == :disk_number
-            disk_number = dparam.second.to_i
-          end
-        end
-
-        if obj_type == :export
-          return StorageNode::is_exported?(disk_number)
-        elsif obj_type == :volume
-          return StorageNode::volume_exists?(disk_number)
-        end
-      end
-    end
-  end
-
-  def handle_request(message)
-    action = message.content.first
-
-    if action == :create
-      handle_create_request(message.content.second, message)
-    elsif action == :delete
-      handle_delete_request(message.content.second, message)
-    end
-  end
-
-  # (create (.. (disk_number ..) ..)
-  def handle_create_request(obj, message)
-    disk_number = disk_size = disk_slot = nil
-
-    obj.each do |param|
-      next if !param.is_a? Array
-      if param.first == :disk_number
-        disk_number = param.second.to_i
-      elsif param.first == :size
-        disk_size = param.second.to_i
-      elsif param.first == :slot
-        disk_slot = param.second.to_i
-      end
-    end
-
-    disk_slot ||= storage_number()
-
-    result = case obj.first
-      when :disk
-        @worker.create_disk(disk_number, disk_slot, disk_size, message.sender)
-      when :volume
-        @worker.create_volume(disk_number, disk_size, message.sender)
-      when :export
-        @worker.create_export(disk_number, disk_slot, message.sender)
-    end
-
-    msg = Cirrocumulus::Message.new(nil, result[:action], [message.content, [result[:reason]]])
-    msg.ontology = self.name
-    self.agent.reply_to_message(msg, message)
   end
 
   # (delete (..))
