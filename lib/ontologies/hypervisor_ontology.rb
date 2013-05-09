@@ -178,21 +178,7 @@ class HypervisorOntology < Ontology
     Log4r::Logger['ontology::hypervisor'].info "Starting guest #{guest_id}"
     Log4r::Logger['ontology::hypervisor'].debug "Guest config: #{guest_cfg.inspect}"
 
-    create_saga(StartGuestSaga).start(guest_cfg, sender, contents, options)
-
-    guest = DomU.new(guest_id, guest_cfg[:is_hvm] == 1 ? :hvm : :pv, guest_cfg[:ram])
-    guest.vcpus = guest_cfg[:cpu][:num]
-    guest.disks = guest_cfg[:disks]
-    guest.cpu_weight = guest_cfg[:cpu][:weight]
-    guest.cpu_cap = guest_cfg[:cpu][:cap]
-    guest.interfaces = guest_cfg[:ifaces]
-    guest.network_boot = guest_cfg[:network_boot]
-    guest.vnc_port = guest_cfg[:vnc][:port] if guest_cfg[:vnc][:port]
-
-    xml_config = "domu_#{guest_id}.xml"
-    xml = File.open(xml_config, 'w')
-    xml.write(guest.to_xml)
-    xml.close
+    create_saga(StartGuestSaga).start(guest_cfg, Log4r::Logger['ontology::hypervisor'], sender, contents, options)
   end
 
 end
