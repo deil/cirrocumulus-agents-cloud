@@ -10,8 +10,7 @@ class DomU
   attr_accessor :cpu_cap
   attr_accessor :vnc_port
   attr_accessor :network_boot
-  attr_accessor :default_bridge
-  attr_accessor :ethernets
+  attr_accessor :interfaces
 
   def initialize(name, type, ram)
     self.name = name
@@ -21,12 +20,11 @@ class DomU
     self.disks = []
     self.cpu_weight = ram
     self.cpu_cap = 0
-    self.default_bridge = XEN_CONFIG[:default_bridge]
-    self.ethernets = []
+    self.interfaces = []
   end
   
   def to_xml
-    template_file = File.open(File.join(AGENT_ROOT, "standalone/domU_#{self.type.to_s}.xml"))
+    template_file = File.open("standalone/domU_#{self.type.to_s}.xml")
     template = template_file.read()
     template_file.close()
 

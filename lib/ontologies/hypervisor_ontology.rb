@@ -88,12 +88,16 @@ class HypervisorOntology < Ontology
 
         Log4r::Logger['ontology::hypervisor'].info "Request: reboot #{guest_id}"
 
-        if Hypervisor.is_guest_running?(guest_id)
-          Hypervisor.reset(guest_id)
+        if reboot_guest(guest_id)
           agree(sender, contents, reply(options))
         else
           refuse(sender, [contents, :guest_not_running], reply(options))
         end
+      end
+    elsif action == :start
+      object = contents[0][1]
+      if object.first == :guest
+        start_guest(object)
       end
     end
   end
@@ -153,6 +157,83 @@ class HypervisorOntology < Ontology
         }
       end
     end
+  end
+
+  def reboot_guest(guest_id)
+    if Hypervisor.is_guest_running?(guest_id)
+      Hypervisor.reset(guest_id)
+      return true
+    end
+
+    false
+  end
+
+  def start_guest(object)
+    guest_cfg = {
+        :is_hvm => 0,
+        :vcpus => 1,
+        :cpu_cap => 0,
+        :cpu_weight => 128,
+        :eth => [],
+        :disks => [],
+        :vnc_enabled => 0,
+        :network_boot => 0
+    }
+
+    guest_id = nil
+
+    object.each do |param|
+      next if !param.is_a?(Array)
+
+      case param.first
+        when :id
+          guest_id = param[1]
+        when :hvm
+          guest_cfg[:is_hvm] = params[1].to_i
+        when :ram
+          guest_cfg[:ram] = param[1].to_i
+        when :vcpus
+          guest_cfg[:vcpus] = param[1].to_i
+        when :weight
+          guest_cfg[:cpu_weight] = param[1].to_i
+        when :cap
+          guest_cfg[:cpu_cap] = param[1].to_i
+        when :vnc
+          guest_cfg[:vnc_enabled] = param[1].to_i
+        when :vnc_port
+          guest_cfg[:vnc_port] = param[1].to_i
+        when :network_boot
+          guest_cfg[:network_boot] = param.second.to_i
+        when :disks
+          param.each do |disk|
+            next if !disk.is_a?(Array)
+            guest_cfg[:disks] << disk
+          end
+        when :eth
+          param.each_with_index do |eth, i|
+            next if i == 0 # :eth
+            guest_cfg[:eth] << eth
+          end
+      end
+    end
+
+    Log4r::Logger['ontology::hypervisor'].info "Starting guest #{guest_id}"
+    Log4r::Logger['ontology::hypervisor'].debug "Guest config: #{guest_cfg.inspect}"
+
+    guest = DomU.new(guest_id, guest_cfg[:is_hvm] == 1 ? :hvm : :pv, guest_cfg[:ram])
+    guest.vcpus = guest_cfg[:vcpus]
+    guest.disks = guest_cfg[:disks]
+    guest.cpu_weight = guest_cfg[:cpu_weight]
+    guest.cpu_cap = guest_cfg[:cpu_cap]
+    guest.ethernets = guest_cfg[:eth]
+    guest.ethernets << '' if guest.ethernets.empty?
+    guest.network_boot = guest_cfg[:network_boot]
+    guest.vnc_port = guest_cfg[:vnc_port] if guest_cfg[:vnc_port]
+
+    xml_config = "domu_#{guest_id}.xml"
+    xml = File.open(xml_config, 'w')
+    xml.write(guest.to_xml)
+    xml.close
   end
 
 end

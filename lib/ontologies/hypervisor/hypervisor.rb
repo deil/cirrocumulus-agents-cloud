@@ -86,6 +86,13 @@ class Hypervisor
       perform_cmd("xm reset #{guest_id}")
     end
 
+    def start_from_file(guest_id)
+      xml_config = "domu_#{guest_id}.xml"
+      cmd = "virsh create #{xml_config}"
+      perform_cmd(cmd)
+    end
+
+
     protected
 
     def perform_cmd(cmd, log_output = true)
