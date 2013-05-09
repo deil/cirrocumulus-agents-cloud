@@ -1,0 +1,43 @@
+<domain type='xen'>
+  <name><%= @name %></name>
+  <memory><%= @ram * 1024 %></memory>
+  <vcpu><%= @vcpus %></vcpu>
+  <os>
+    <type>hvm</type>
+    <loader>/usr/lib/xen-4.0/boot/hvmloader</loader>
+    <boot dev='<%= @network_boot == 1 ? 'network' : 'hd' %>'/>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+    <pae/>
+  </features>
+  <clock offset='utc'/>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>restart</on_crash>
+  <devices>
+    <emulator>/usr/lib/xen-4.0/bin/qemu-dm</emulator>
+    <% @disks.each do |disk| %>
+    <disk type='block' device='disk'>
+      <driver name='phy'/>
+      <source dev='/dev/md<%= disk.second %>'/>
+      <target dev='<%= disk.first.gsub('xvd', 'hd') %>' bus='xen'/>
+    </disk>
+    <% end %>
+    <% @ethernets.each do |eth| %>
+    <interface type='bridge'>
+      <source bridge='<%= @default_bridge %>' />
+      <% if !eth.blank? %>
+      <mac address='<%= eth %>'/>
+      <% end %>
+      <script path='/etc/xen/scripts/vif-bridge'/>
+    </interface>
+    <% end %>
+    <% if @vnc_port %>
+    <graphics type='vnc' port='<%= @vnc_port %>' autoport='no'/>
+    <% end %>
+    <input type='tablet' bus='usb'/>
+    <input type='mouse' bus='ps2'/>
+  </devices>
+</domain>

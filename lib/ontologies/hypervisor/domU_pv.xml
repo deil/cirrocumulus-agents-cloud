@@ -1,0 +1,36 @@
+<domain type='xen'>
+  <name><%= @name %></name>
+  <memory><%= @ram * 1024 %></memory>
+  <vcpu><%= @vcpus %></vcpu>
+  <bootloader>/usr/lib/xen-4.0/bin/pygrub</bootloader>
+  <os>
+    <type>linux</type>
+    <cmdline>clock=jiffies</cmdline>
+  </os>
+  <clock offset='utc'/>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>restart</on_crash>
+  <devices>
+    <!--<emulator>/usr/lib/xen/bin/qemu-dm</emulator>-->
+    <% @disks.each do |disk| %>
+    <disk type='block' device='disk'>
+      <driver name='phy'/>
+      <source dev='/dev/md<%= disk.second %>'/>
+      <target dev='<%= disk.first %>' bus='xen'/>
+    </disk>
+    <% end %>
+    <% @ethernets.each do |eth| %>
+    <interface type='bridge'>
+      <source bridge='<%= @default_bridge %>' />
+      <% if !eth.blank? %>
+      <mac address='<%= eth %>'/>
+      <% end %>
+      <script path='/etc/xen/scripts/vif-bridge'/>
+    </interface>
+    <% end %>
+    <% if @vnc_port %>
+    <graphics type='vnc' port='<%= @vnc_port %>' autoport='no'/>
+    <% end %>
+  </devices>
+</domain>
