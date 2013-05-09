@@ -15,19 +15,19 @@
     <% @disks.each do |disk| %>
     <disk type='block' device='disk'>
       <driver name='phy'/>
-      <source dev='/dev/md<%= disk[:source] %>'/>
+      <source dev='/dev/md<%= disk[:number] %>'/>
       <target dev='<%= disk[:device] %>' bus='xen'/>
     </disk>
-    <% end -%>
+    <% end %>
     <% @interfaces.each do |eth| %>
     <interface type='bridge'>
       <source bridge='<%= eth[:bridge] %>' />
       <mac address='<%= eth[:mac] %>' />
       <script path='/etc/xen/scripts/vif-bridge'/>
     </interface>
-    <% end -%>
+    <% end %>
     <% if @vnc_port %>
     <graphics type='vnc' port='<%= @vnc_port %>' autoport='no'/>
-    <% end -%>
+    <% end %>
   </devices>
 </domain>
