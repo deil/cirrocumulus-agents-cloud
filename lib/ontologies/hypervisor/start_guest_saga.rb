@@ -8,32 +8,32 @@ class StartGuestSaga < Saga
     @options = options
     @logger = logger
 
-    logger.info "Starting saga #{id}: start guest #{@guest_cfg[:id]} with RAM #{@guest_cfg[:ram]} Mb"
+    @logger.info "Starting saga #{id}: start guest #{@guest_cfg[:id]} with RAM #{@guest_cfg[:ram]} Mb"
     timeout(1)
   end
 
   def handle_reply(sender, contents, options = {})
     if !parameters_are_correct
-      logger.error 'Incorrect guest parameters were supplied. Stop'
+      @logger.error 'Incorrect guest parameters were supplied. Stop'
       @ontology.refuse(@sender, @contents, [:incorrect_parameters], @options)
       error and return
     end
 
-    logger.debug 'Supplied guest parameters are correct'
+    @logger.debug 'Supplied guest parameters are correct'
 
     if Hypervisor.is_guest_running?(@guest_cfg[:id])
-      logger.warn "Guest #{@guest_cfg[:id]} is already running"
+      @logger.warn "Guest #{@guest_cfg[:id]} is already running"
       @ontology.refuse(@sender, @contents, [:guest_already_running], @options)
       finish and return
     end
 
     if Hypervisor.free_memory <= @guest_cfg[:ram]
-      logger.error "No free RAM to start this guest (#{Hypervisor.free_memory}Mb is available)"
+      @logger.error "No free RAM to start this guest (#{Hypervisor.free_memory}Mb is available)"
       @ontology.refuse(@sender, @contents, [:insufficient_ram], @options)
       error and return
     end
 
-    logger.debug 'Generating libvirt config and starting guest'
+    @logger.debug 'Generating libvirt config and starting guest'
 
     begin
       guest = DomU.new(guest_id, guest_cfg[:is_hvm] == 1 ? :hvm : :pv, guest_cfg[:ram])
@@ -50,7 +50,7 @@ class StartGuestSaga < Saga
       xml.write(guest.to_xml)
       xml.close
     rescue Exception => ex
-      logger.error ex.to_s
+      @logger.error ex.to_s
       @ontology.failure(@sender, @contents, [:unknown_reason], @options)
       error and return
     end
@@ -59,7 +59,7 @@ class StartGuestSaga < Saga
     @ontology.agree(@sender, @contents, @options)
     finish
   rescue Exception => ex
-    logger.error "Unhandled exception: #{ex.to_s}\n#{ex.backtrace.to_s}"
+    @logger.error "Unhandled exception: #{ex.to_s}\n#{ex.backtrace.to_s}"
   end
 
   protected

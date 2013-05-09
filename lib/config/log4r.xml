@@ -28,6 +28,7 @@
   </logger>
 
   <logger name="ontology::hypervisor" level="ALL" additive="false" trace="false">
+    <outputter>console</outputter>
   </logger>
 
   <logger name="ontology::factory" level="ALL" additive="false" trace="false">
