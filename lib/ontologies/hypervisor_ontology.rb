@@ -227,8 +227,7 @@ class HypervisorOntology < Ontology
     guest.disks = guest_cfg[:disks]
     guest.cpu_weight = guest_cfg[:cpu_weight]
     guest.cpu_cap = guest_cfg[:cpu_cap]
-    guest.ethernets = guest_cfg[:eth]
-    guest.ethernets << '' if guest.ethernets.empty?
+    guest.interfaces = guest_cfg[:eth]
     guest.network_boot = guest_cfg[:network_boot]
     guest.vnc_port = guest_cfg[:vnc_port] if guest_cfg[:vnc_port]
 
