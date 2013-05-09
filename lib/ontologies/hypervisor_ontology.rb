@@ -5,6 +5,7 @@ require_relative 'hypervisor/mac'
 require_relative 'hypervisor/mdraid'
 require_relative 'hypervisor/dom_u'
 require_relative 'hypervisor/params'
+require_relative 'hypervisor/start_guest_saga'
 
 class Storage < KnowledgeClass
   klass 'storage'
@@ -99,8 +100,7 @@ class HypervisorOntology < Ontology
     elsif action == :start
       object = contents[0][1]
       if object.first == :guest
-        Log4r::Logger['ontology::hypervisor'].info 'Request: start'
-        start_guest(object)
+        start_guest(object, sender, contents, options)
       end
     end
   end
@@ -171,12 +171,14 @@ class HypervisorOntology < Ontology
     false
   end
 
-  def start_guest(object)
+  def start_guest(object, sender, contents, options)
     guest_cfg = ParamsParser::guest_config(object)
     guest_id = guest_cfg[:id]
 
     Log4r::Logger['ontology::hypervisor'].info "Starting guest #{guest_id}"
     Log4r::Logger['ontology::hypervisor'].debug "Guest config: #{guest_cfg.inspect}"
+
+    create_saga(StartGuestSaga).start(guest_cfg, sender, contents, options)
 
     guest = DomU.new(guest_id, guest_cfg[:is_hvm] == 1 ? :hvm : :pv, guest_cfg[:ram])
     guest.vcpus = guest_cfg[:cpu][:num]
