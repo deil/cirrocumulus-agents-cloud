@@ -24,7 +24,7 @@ class DomU
   end
   
   def to_xml
-    template_file = File.open("standalone/domU_#{self.type.to_s}.xml")
+    template_file = File.open("ontologies/hypervisor/domU_#{self.type.to_s}.xml")
     template = template_file.read()
     template_file.close()
 
