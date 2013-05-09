@@ -3,6 +3,7 @@ require_relative 'hypervisor/hypervisor'
 require_relative 'hypervisor/hypervisor_db'
 require_relative 'hypervisor/mac'
 require_relative 'hypervisor/mdraid'
+require_relative 'hypervisor/dom_u'
 
 class Storage < KnowledgeClass
   klass 'storage'
