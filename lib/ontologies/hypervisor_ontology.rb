@@ -108,6 +108,38 @@ class HypervisorOntology < Ontology
 
   attr_reader :logger
 
+  def parse_params(content, subroutine = false)
+    return parse_params(content.size == 1 ? content[0] : content, true)  if !subroutine
+
+    return [] if content.nil?
+    return content if !content.is_a?(Array)
+    return [] if content.size == 0
+    return {content[0] => []} if content.size == 1
+    return {content[0] => parse_params(content[1], true)} if content.size == 2
+
+    res = {content[0] => []}
+
+    if content.all? {|item| !item.is_a?(Array)}
+      content.each_with_index do |item,i|
+        if i == 0
+          res[content[0]] = []
+        else
+          res[content[0]] << item
+        end
+      end
+    else
+      content.each_with_index do |item,i|
+        if i == 0
+          res[content[0]] = {}
+        else
+          res[content[0]].merge!(parse_params(item, true))
+        end
+      end
+    end
+
+    res
+  end
+
   def discover_new_disks()
     debug "Discovering running MD devices"
 
@@ -183,6 +215,8 @@ class HypervisorOntology < Ontology
     }
 
     guest_id = nil
+
+    p parse_params(object)
 
     object.each do |param|
       next if !param.is_a?(Array)
