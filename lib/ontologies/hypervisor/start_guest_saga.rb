@@ -1,3 +1,5 @@
+require_relative 'hypervisor'
+
 class StartGuestSaga < Saga
   def start(guest_cfg, logger, sender, contents, options)
     @guest_cfg = guest_cfg
@@ -15,6 +17,22 @@ class StartGuestSaga < Saga
       @ontology.refuse(@sender, @contents, [:incorrect_parameters], @options)
       error and return
     end
+
+    logger.debug 'Supplied guest parameters are correct'
+
+    if Hypervisor.is_guest_running?(@guest_cfg[:id])
+      logger.warn "Guest #{@guest_cfg[:id]} is already running"
+      @ontology.refuse(@sender, @contents, [:guest_already_running], @options)
+      finish and return
+    end
+
+    if Hypervisor.free_memory <= @guest_cfg[:ram]
+      logger.error "No free RAM to start this guest (#{Hypervisor.free_memory}Mb is available)"
+      @ontology.refuse(@sender, @contents, [:insufficient_ram], @options)
+      error and return
+    end
+
+    logger.debug 'Generating libvirt config and starting guest'
 
     begin
       guest = DomU.new(guest_id, guest_cfg[:is_hvm] == 1 ? :hvm : :pv, guest_cfg[:ram])
