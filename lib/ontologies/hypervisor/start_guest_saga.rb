@@ -12,7 +12,8 @@ class StartGuestSaga < Saga
 
   def handle_reply(sender, contents, options = {})
     if !parameters_are_correct
-      @ontology.refuse(@sender, @contents, [:incorrect_parameters], @options) and return
+      @ontology.refuse(@sender, @contents, [:incorrect_parameters], @options)
+      error and return
     end
 
     begin
@@ -32,16 +33,22 @@ class StartGuestSaga < Saga
     rescue Exception => ex
       logger.error ex.to_s
       @ontology.failure(@sender, @contents, [:unknown_reason], @options)
+      error and return
     end
 
 
     @ontology.agree(@sender, @contents, @options)
+    finish
   end
 
   protected
 
   def parameters_are_correct
-    false
+    return false if @guest_cfg[:id].blank?
+    return false if @guest_cfg[:ram].nil? || @guest_cfg[:ram] <= 0
+    return false if @guest_cfg[:disks].size == 0 && @guest_cfg[:ifaces].size == 0
+
+    true
   end
 
 end
