@@ -27,8 +27,9 @@ class StartGuestSaga < Saga
       finish and return
     end
 
+    @logger.debug "#{Hypervisor.free_memory}Mb RAM is available, #{@guest_cfg[:ram]}Mb is required"
     if Hypervisor.free_memory <= @guest_cfg[:ram]
-      @logger.error "No free RAM to start this guest (#{Hypervisor.free_memory}Mb is available)"
+      @logger.error 'No free RAM to start this guest'
       @ontology.refuse(@sender, @contents, [:insufficient_ram], @options)
       error and return
     end
