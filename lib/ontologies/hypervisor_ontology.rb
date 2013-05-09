@@ -97,6 +97,7 @@ class HypervisorOntology < Ontology
     elsif action == :start
       object = contents[0][1]
       if object.first == :guest
+        Log4r::Logger['ontology::hypervisor'].info 'Request: start'
         start_guest(object)
       end
     end
