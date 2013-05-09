@@ -12,7 +12,7 @@ class StartGuestSaga < Saga
 
   def handle_reply(sender, contents, options = {})
     if !parameters_are_correct
-      refuse(@sender, @contents, :incorrect_parameters) and return
+      @ontology.refuse(@sender, @contents, [:incorrect_parameters], @options) and return
     end
 
     begin
@@ -31,11 +31,11 @@ class StartGuestSaga < Saga
       xml.close
     rescue Exception => ex
       logger.error ex.to_s
-      failure(@sender, @contents, :unknown_reason)
+      @ontology.failure(@sender, @contents, [:unknown_reason], @options)
     end
 
 
-    agree(@sender, @contents)
+    @ontology.agree(@sender, @contents, @options)
   end
 
   protected

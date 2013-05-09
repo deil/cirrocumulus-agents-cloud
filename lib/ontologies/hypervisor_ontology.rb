@@ -43,6 +43,8 @@ class HypervisorOntology < Ontology
   end
 
   def tick
+    super.tick
+
     @tick_counter += 1
     return if @tick_counter < 60
 
@@ -178,7 +180,7 @@ class HypervisorOntology < Ontology
     Log4r::Logger['ontology::hypervisor'].info "Starting guest #{guest_id}"
     Log4r::Logger['ontology::hypervisor'].debug "Guest config: #{guest_cfg.inspect}"
 
-    create_saga(StartGuestSaga).start(guest_cfg, Log4r::Logger['ontology::hypervisor'], sender, contents, options)
+    create_saga(StartGuestSaga).start(guest_cfg, Log4r::Logger['ontology::hypervisor'], sender, contents, reply(options))
   end
 
 end
