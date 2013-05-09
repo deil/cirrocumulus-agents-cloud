@@ -14,6 +14,7 @@ class StartGuestSaga < Saga
 
   def handle_reply(sender, contents, options = {})
     if !parameters_are_correct
+      logger.error 'Incorrect guest parameters were supplied. Stop'
       @ontology.refuse(@sender, @contents, [:incorrect_parameters], @options)
       error and return
     end
@@ -57,6 +58,8 @@ class StartGuestSaga < Saga
 
     @ontology.agree(@sender, @contents, @options)
     finish
+  rescue Exception => ex
+    logger.error "Unhandled exception: #{ex.to_s}\n#{ex.backtrace.to_s}"
   end
 
   protected
