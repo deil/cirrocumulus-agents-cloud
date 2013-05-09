@@ -4,6 +4,7 @@ require_relative 'hypervisor/hypervisor_db'
 require_relative 'hypervisor/mac'
 require_relative 'hypervisor/mdraid'
 require_relative 'hypervisor/dom_u'
+require_relative 'hypervisor/params'
 
 class Storage < KnowledgeClass
   klass 'storage'
@@ -108,40 +109,8 @@ class HypervisorOntology < Ontology
 
   attr_reader :logger
 
-  def parse_params(content, subroutine = false)
-    return parse_params(content.size == 1 ? content[0] : content, true)  if !subroutine
-
-    return [] if content.nil?
-    return content if !content.is_a?(Array)
-    return [] if content.size == 0
-    return {content[0] => []} if content.size == 1
-    return {content[0] => parse_params(content[1], true)} if content.size == 2
-
-    res = {content[0] => []}
-
-    if content.all? {|item| !item.is_a?(Array)}
-      content.each_with_index do |item,i|
-        if i == 0
-          res[content[0]] = []
-        else
-          res[content[0]] << item
-        end
-      end
-    else
-      content.each_with_index do |item,i|
-        if i == 0
-          res[content[0]] = {}
-        else
-          res[content[0]].merge!(parse_params(item, true))
-        end
-      end
-    end
-
-    res
-  end
-
   def discover_new_disks()
-    debug "Discovering running MD devices"
+    debug 'Discovering running MD devices'
 
     Mdraid.list_disks().each do |discovered|
       disk = VirtualDisk.find_by_disk_number(discovered)
@@ -203,67 +172,20 @@ class HypervisorOntology < Ontology
   end
 
   def start_guest(object)
-    guest_cfg = {
-        :is_hvm => 0,
-        :vcpus => 1,
-        :cpu_cap => 0,
-        :cpu_weight => 128,
-        :eth => [],
-        :disks => [],
-        :vnc_enabled => 0,
-        :network_boot => 0
-    }
-
-    guest_id = nil
-
-    p parse_params(object)
-
-    object.each do |param|
-      next if !param.is_a?(Array)
-
-      case param.first
-        when :id
-          guest_id = param[1]
-        when :hvm
-          guest_cfg[:is_hvm] = params[1].to_i
-        when :ram
-          guest_cfg[:ram] = param[1].to_i
-        when :vcpus
-          guest_cfg[:vcpus] = param[1].to_i
-        when :weight
-          guest_cfg[:cpu_weight] = param[1].to_i
-        when :cap
-          guest_cfg[:cpu_cap] = param[1].to_i
-        when :vnc
-          guest_cfg[:vnc_enabled] = param[1].to_i
-        when :vnc_port
-          guest_cfg[:vnc_port] = param[1].to_i
-        when :network_boot
-          guest_cfg[:network_boot] = param.second.to_i
-        when :disks
-          param.each do |disk|
-            next if !disk.is_a?(Array)
-            guest_cfg[:disks] << disk
-          end
-        when :eth
-          param.each_with_index do |eth, i|
-            next if i == 0 # :eth
-            guest_cfg[:eth] << eth
-          end
-      end
-    end
+    guest_cfg = ParamsParser::guest_config(object)
+    guest_id = guest_cfg[:id]
 
     Log4r::Logger['ontology::hypervisor'].info "Starting guest #{guest_id}"
     Log4r::Logger['ontology::hypervisor'].debug "Guest config: #{guest_cfg.inspect}"
 
     guest = DomU.new(guest_id, guest_cfg[:is_hvm] == 1 ? :hvm : :pv, guest_cfg[:ram])
-    guest.vcpus = guest_cfg[:vcpus]
+    guest.vcpus = guest_cfg[:cpu][:num]
     guest.disks = guest_cfg[:disks]
-    guest.cpu_weight = guest_cfg[:cpu_weight]
-    guest.cpu_cap = guest_cfg[:cpu_cap]
-    guest.interfaces = guest_cfg[:eth]
+    guest.cpu_weight = guest_cfg[:cpu][:weight]
+    guest.cpu_cap = guest_cfg[:cpu][:cap]
+    guest.interfaces = guest_cfg[:ifaces]
     guest.network_boot = guest_cfg[:network_boot]
-    guest.vnc_port = guest_cfg[:vnc_port] if guest_cfg[:vnc_port]
+    guest.vnc_port = guest_cfg[:vnc][:port] if guest_cfg[:vnc][:port]
 
     xml_config = "domu_#{guest_id}.xml"
     xml = File.open(xml_config, 'w')
