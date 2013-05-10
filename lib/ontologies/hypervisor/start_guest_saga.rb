@@ -58,7 +58,7 @@ class StartGuestSaga < Saga
 
     Hypervisor.start_from_file(@guest_cfg[:id])
 
-    @logger.info "Guest #{@guest_cfg} was successfully started."
+    @logger.info "Guest #{@guest_cfg[:id]} was successfully started."
 
     @ontology.agree(@sender, @contents, @options)
     finish
