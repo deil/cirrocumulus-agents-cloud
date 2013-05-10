@@ -6,6 +6,7 @@ require_relative 'hypervisor/mdraid'
 require_relative 'hypervisor/dom_u'
 require_relative 'hypervisor/params'
 require_relative 'hypervisor/start_guest_saga'
+require_relative 'hypervisor/stop_guest_saga'
 
 class Storage < KnowledgeClass
   klass 'storage'
@@ -104,6 +105,15 @@ class HypervisorOntology < Ontology
       if object.first == :guest
         start_guest(object, sender, contents, options)
       end
+    elsif action == :stop
+      object = contents[0][1]
+      if object.first == :guest
+        guest = object[1]
+        guest_id = guest[1].strip
+
+        Log4r::Logger['ontology::hypervisor'].info "Request: stop #{guest_id}"
+        create_saga(StopGuestSaga).start(guest_id, Log4r::Logger['ontology::hypervisor'], sender, contents, reply(options))
+      end
     end
   end
 
@@ -182,5 +192,4 @@ class HypervisorOntology < Ontology
 
     create_saga(StartGuestSaga).start(guest_cfg, Log4r::Logger['ontology::hypervisor'], sender, contents, reply(options))
   end
-
 end
