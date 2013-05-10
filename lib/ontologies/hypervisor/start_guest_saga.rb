@@ -36,31 +36,26 @@ class StartGuestSaga < Saga
 
     @logger.debug 'Generating libvirt config and starting guest'
 
-    begin
-      guest = DomU.new(@guest_cfg[:id], @guest_cfg[:is_hvm] == 1 ? :hvm : :pv, @guest_cfg[:ram])
-      guest.vcpus = @guest_cfg[:cpu][:num]
-      guest.disks = @guest_cfg[:disks]
-      guest.cpu_weight = @guest_cfg[:cpu][:weight]
-      guest.cpu_cap = @guest_cfg[:cpu][:cap]
-      guest.interfaces = @guest_cfg[:ifaces]
-      guest.network_boot = @guest_cfg[:network_boot]
-      guest.vnc_port = @guest_cfg[:vnc][:port] if !@guest_cfg[:vnc][:port].nil? && @guest_cfg[:vnc][:port] > 0
+    guest = DomU.new(@guest_cfg[:id], @guest_cfg[:is_hvm] == 1 ? :hvm : :pv, @guest_cfg[:ram])
+    guest.vcpus = @guest_cfg[:cpu][:num]
+    guest.disks = @guest_cfg[:disks]
+    guest.cpu_weight = @guest_cfg[:cpu][:weight]
+    guest.cpu_cap = @guest_cfg[:cpu][:cap]
+    guest.interfaces = @guest_cfg[:ifaces]
+    guest.network_boot = @guest_cfg[:network_boot]
+    guest.vnc_port = @guest_cfg[:vnc][:port] if @guest_cfg[:vnc][:port] > 0
 
-      xml_config = "domu_#{@guest_cfg[:id]}.xml"
-      xml = File.open(xml_config, 'w')
-      xml.write(guest.to_xml)
-      xml.close
-    rescue Exception => ex
-      @logger.error ex.to_s
-      @ontology.failure(@sender, @contents, [:unknown_reason], @options)
-      error and return
-    end
-
+    xml_config = "domu_#{@guest_cfg[:id]}.xml"
+    xml = File.open(xml_config, 'w')
+    xml.write(guest.to_xml)
+    xml.close
 
     @ontology.agree(@sender, @contents, @options)
     finish
   rescue Exception => ex
     @logger.error "Unhandled exception: #{ex.to_s}\n#{ex.backtrace.to_s}"
+    @ontology.failure(@sender, @contents, [:unknown_reason], @options)
+    error
   end
 
   protected
