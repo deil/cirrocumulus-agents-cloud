@@ -1,4 +1,4 @@
-require 'hypervisor'
+require_relative 'hypervisor'
 
 class StopGuestSaga < Saga
   def start(guest_id, logger, sender, contents, options)
