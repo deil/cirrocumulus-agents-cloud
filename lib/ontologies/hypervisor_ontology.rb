@@ -108,11 +108,10 @@ class HypervisorOntology < Ontology
     elsif action == :stop
       object = contents[0][1]
       if object.first == :guest
-        guest = object[1]
-        guest_id = guest[1].strip
+        guest = ParamsParser::guest_config(object)
 
-        Log4r::Logger['ontology::hypervisor'].info "Request: stop #{guest_id}"
-        create_saga(StopGuestSaga).start(guest_id, Log4r::Logger['ontology::hypervisor'], sender, contents, reply(options))
+        Log4r::Logger['ontology::hypervisor'].info "Request: stop #{guest[:id]}"
+        create_saga(StopGuestSaga).start(guest[:id], Log4r::Logger['ontology::hypervisor'], sender, contents, reply(options))
       end
     end
   end
