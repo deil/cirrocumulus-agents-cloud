@@ -56,12 +56,16 @@ class StartGuestSaga < Saga
     xml.write(guest.to_xml)
     xml.close
 
-    Hypervisor.start_from_file(@guest_cfg[:id])
+    if Hypervisor.start_from_file(@guest_cfg[:id])
+      @logger.info "Guest #{@guest_cfg[:id]} was successfully started."
 
-    @logger.info "Guest #{@guest_cfg[:id]} was successfully started."
-
-    @ontology.agree(@sender, @contents, @options)
-    finish
+      @ontology.agree(@sender, @contents, @options)
+      finish
+    else
+      @logger.error 'Failed to start guest with unknown reason.'
+      @ontology.failure(@sender, @contents, [:unknown_reason], @options)
+      error
+    end
   rescue Exception => ex
     @logger.error "Unhandled exception: #{ex.to_s}\n#{ex.backtrace.to_s}"
     @ontology.failure(@sender, @contents, [:unknown_reason], @options)
