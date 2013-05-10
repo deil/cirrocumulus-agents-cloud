@@ -50,6 +50,8 @@ class StartGuestSaga < Saga
     xml.write(guest.to_xml)
     xml.close
 
+    Hypervisor.start_from_file(@guest_cfg[:id])
+
     @ontology.agree(@sender, @contents, @options)
     finish
   rescue Exception => ex
