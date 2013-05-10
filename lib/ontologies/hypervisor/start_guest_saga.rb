@@ -37,16 +37,16 @@ class StartGuestSaga < Saga
     @logger.debug 'Generating libvirt config and starting guest'
 
     begin
-      guest = DomU.new(guest_id, guest_cfg[:is_hvm] == 1 ? :hvm : :pv, guest_cfg[:ram])
-      guest.vcpus = guest_cfg[:cpu][:num]
-      guest.disks = guest_cfg[:disks]
-      guest.cpu_weight = guest_cfg[:cpu][:weight]
-      guest.cpu_cap = guest_cfg[:cpu][:cap]
-      guest.interfaces = guest_cfg[:ifaces]
-      guest.network_boot = guest_cfg[:network_boot]
-      guest.vnc_port = guest_cfg[:vnc][:port] if guest_cfg[:vnc][:port]
+      guest = DomU.new(@guest_cfg[:id], @guest_cfg[:is_hvm] == 1 ? :hvm : :pv, @guest_cfg[:ram])
+      guest.vcpus = @guest_cfg[:cpu][:num]
+      guest.disks = @guest_cfg[:disks]
+      guest.cpu_weight = @guest_cfg[:cpu][:weight]
+      guest.cpu_cap = @guest_cfg[:cpu][:cap]
+      guest.interfaces = @guest_cfg[:ifaces]
+      guest.network_boot = @guest_cfg[:network_boot]
+      guest.vnc_port = @guest_cfg[:vnc][:port] if @guest_cfg[:vnc][:port] > 0
 
-      xml_config = "domu_#{guest_id}.xml"
+      xml_config = "domu_#{@guest_cfg[:id]}.xml"
       xml = File.open(xml_config, 'w')
       xml.write(guest.to_xml)
       xml.close
