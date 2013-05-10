@@ -44,7 +44,7 @@ class StartGuestSaga < Saga
       guest.cpu_cap = @guest_cfg[:cpu][:cap]
       guest.interfaces = @guest_cfg[:ifaces]
       guest.network_boot = @guest_cfg[:network_boot]
-      guest.vnc_port = @guest_cfg[:vnc][:port] if @guest_cfg[:vnc][:port] > 0
+      guest.vnc_port = @guest_cfg[:vnc][:port] if !@guest_cfg[:vnc][:port].nil? && @guest_cfg[:vnc][:port] > 0
 
       xml_config = "domu_#{@guest_cfg[:id]}.xml"
       xml = File.open(xml_config, 'w')
