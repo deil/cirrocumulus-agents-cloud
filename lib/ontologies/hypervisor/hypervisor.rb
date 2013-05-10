@@ -96,7 +96,11 @@ class Hypervisor
     protected
 
     def perform_cmd(cmd, log_output = true)
+      Log4r::Logger['os'].debug "Performing command: #{cmd}"
       _, out, err = systemu(cmd)
+      Log4r::Logger['os'].debug "Stdout: #{out}"
+      Log4r::Logger['os'].debug "Stderr: #{err}" unless err.blank?
+
       err.blank?
     end
   end
