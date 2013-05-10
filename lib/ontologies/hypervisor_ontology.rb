@@ -97,7 +97,7 @@ class HypervisorOntology < Ontology
         if reboot_guest(guest_id)
           agree(sender, contents, reply(options))
         else
-          refuse(sender, [contents, :guest_not_running], reply(options))
+          refuse(sender, contents, [:guest_not_running], reply(options))
         end
       end
     elsif action == :start
