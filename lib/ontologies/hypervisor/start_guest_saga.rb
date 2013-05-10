@@ -57,6 +57,9 @@ class StartGuestSaga < Saga
     xml.close
 
     if Hypervisor.start_from_file(@guest_cfg[:id])
+      @logger.info 'Setting weight & cap'
+      Hypervisor.set_cpu(@guest_cfg[:id], @guest_cfg[:cpu][:weight], @guest_cfg[:cpu][:cap])
+
       @logger.info "Guest #{@guest_cfg[:id]} was successfully started."
 
       @ontology.agree(@sender, @contents, @options)
