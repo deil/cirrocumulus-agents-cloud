@@ -1,4 +1,5 @@
 require_relative 'hypervisor'
+require_relative 'mdraid'
 
 class StartGuestSaga < Saga
   def start(guest_cfg, logger, sender, contents, options)
@@ -34,6 +35,11 @@ class StartGuestSaga < Saga
       error and return
     end
 
+    if !all_disks_available
+      @logger.error 'Not all virtual disks are available. Stop'
+      error and return
+    end
+
     @logger.debug 'Generating libvirt config and starting guest'
 
     guest = DomU.new(@guest_cfg[:id], @guest_cfg[:is_hvm] == 1 ? :hvm : :pv, @guest_cfg[:ram])
@@ -52,6 +58,8 @@ class StartGuestSaga < Saga
 
     Hypervisor.start_from_file(@guest_cfg[:id])
 
+    logger.info "Guest #{@guest_cfg} was successfully started."
+
     @ontology.agree(@sender, @contents, @options)
     finish
   rescue Exception => ex
@@ -66,6 +74,18 @@ class StartGuestSaga < Saga
     return false if @guest_cfg[:id].blank?
     return false if @guest_cfg[:ram].nil? || @guest_cfg[:ram] <= 0
     return false if @guest_cfg[:disks].size == 0 && @guest_cfg[:ifaces].size == 0
+
+    true
+  end
+
+  def all_disks_available
+    @guest_cfg[:disks].each do |disk|
+      @logger.debug "Checking state of virtual disk #{disk[:number]}"
+      if Mdraid.get_status(disk[:number]) != :stopped
+        raid = Mdraid.new(disk[:number])
+        return false unless raid.clean?
+      end
+    end
 
     true
   end
