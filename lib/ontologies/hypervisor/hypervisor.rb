@@ -21,7 +21,7 @@ class Hypervisor
 
     def set_cpu(domU, weight, cap)
       cmd = "xm sched-credit -d #{domU} -w #{weight} -c #{cap}"
-      _, res = systemu(cmd)
+      perform_cmd(cmd)
     end
 
     def running_guests
@@ -92,16 +92,24 @@ class Hypervisor
       perform_cmd(cmd)
     end
 
+    def shutdown(guest_id)
+      perform_cmd("xm shutdown #{guest_id}")
+    end
+
+    def destroy(guest_id)
+      perform_cmd("xm destroy #{guest_id}")
+    end
 
     protected
 
     def perform_cmd(cmd, log_output = true)
       Log4r::Logger['os'].debug "Performing command: #{cmd}"
-      _, out, err = systemu(cmd)
+      status, out, err = systemu(cmd)
       Log4r::Logger['os'].debug "Stdout: #{out}"
       Log4r::Logger['os'].debug "Stderr: #{err}" unless err.blank?
+      Log4r::Logger['os'].debug "Exit status: #{status.exitstatus}"
 
-      err.blank?
+      status.success?
     end
   end
 end
