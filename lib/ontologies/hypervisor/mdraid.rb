@@ -134,7 +134,7 @@ class Mdraid
     item = @data.find {|l| l =~ /State : ([\w ,]+)$/}
     if !item.empty?
       item =~ /State : ([\w ,]+)$/
-      states = $1.split(', ')
+      states = $1.strip.split(', ')
       return true if states.include?('active') || states.include?('clean')
     end
 
